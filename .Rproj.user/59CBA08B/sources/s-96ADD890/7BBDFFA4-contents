@@ -47,8 +47,8 @@ M <- ncol(X)
 
 # For Generated Quantities
 N_gen <- 101
-range_time <- round(range(data$time))
-new_t <- seq(from = range_time[1], to = range_time[2], length.out = N_gen)
+range_time <- range(data$time)
+new_t <- seq(from = floor(range_time[1]), to = ceiling(range_time[2]), length.out = N_gen)
 
 # Stan data object
 data_stan <- list(N = N,
@@ -64,9 +64,7 @@ data_stan <- list(N = N,
                   N_edges = length(node1),
                   node1 = node1,
                   node2 = node2,
-                  region = as.integer(data$region),
-                  N_gen = N_gen, # Improve the generation procedure
-                  new_t = new_t)
+                  region = as.integer(data$region))
 
 ### Stan Modeling
 
@@ -90,6 +88,6 @@ end_time <- Sys.time()
 time_taken <- end_time - start_time
 time_taken
 
-# saveRDS(object = fit, file = "DATA/fitted_random_effects.rds")
+saveRDS(object = fit, file = "DATA/fitted_random_effects.rds")
 
 fitted_data <- rstan::extract(fit)

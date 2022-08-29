@@ -64,10 +64,6 @@ data {
   int<lower = 1, upper = N_reg> node1[N_edges]; // Extremes of edges
   int<lower = 1, upper = N_reg> node2[N_edges];
   int<lower = 1, upper = N_reg> region[N]; // Region for each observation
-  
-  // For the "Generated Quantities" block
-  int<lower = 0> N_gen;
-  vector<lower = 0>[N_gen] new_t;
 }
 
 parameters {
@@ -126,9 +122,8 @@ model {
   
 }
 
-generated quantities { // Alternatively, one can generate from T, so they compute the "ecdf". But what is its distribution here?
-
-  vector[N_gen] excess_survival; 
-
-  excess_survival = exp(-1 * (cumHazPGW(N, new_t .* exp(lp_tilde), eta, nu, theta) .* exp(lp - lp_tilde)));
-}
+// generated quantities { } 
+/* 
+One can generate from T, so they compute the "ecdf". But what is its distribution here?
+Also, it dependes on the covariates. 
+*/
