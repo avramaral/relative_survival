@@ -13,7 +13,7 @@ functions {
     return res;
   }
   
-  // Cumulative Hazard Function
+  // Cumulative Hazard Function 
   vector cumHazPGW (int N, vector time, real eta, real nu, real theta) { 
     vector[N] res;
     for (i in 1:N) {
@@ -21,27 +21,29 @@ functions {
     }
     
     return res;
-  }
+  } // Check the expression!
 
   // ------
   // Others
   // ------
 
-  // Liner Predictor for X tilde
-  vector linear_predictor_tilde (int N, matrix X_tilde, vector alpha) { // Need to include random effects.
+  // Liner Predictor
+  vector linear_predictor (int N, matrix design_matrix, vector fixed_coeff, int[] region, vector random_effect) { 
     vector[N] res;
-    res = X_tilde * alpha;
+    vector[N] re_vector;
+    for (i in 1:N) {
+      re_vector[i] = random_effect[region[i]];
+    }
+    res = design_matrix * fixed_coeff + re_vector;
     
     return res;
   }
   
-  // Linear Predictor for X
-  vector linear_predictor (int N, matrix X, vector beta) { // Need to include random effects.
-    vector[N] res;
-    res = X * beta;
-    
-    return res;
-  }
+  // Distribution function for the ICAR model with constraint to the sum of u's
+  // Reference: Bayesian hierarchical spatial models: Implementing the Besag York Mollié model in Stan
+  real icar_normal_lpdf (vector random_effect, int N_reg, int[] node1, int[] node2) { // For a general random effect "random_effect"
+    return -0.5 * dot_self(random_effect[node1] - random_effect[node2]) + normal_lpdf(sum(random_effect) | 0, 0.001 * N_reg);
+  } 
   
 }
 
@@ -55,7 +57,17 @@ data {
   vector<lower = 0>[N] pop_haz;
   matrix[N, M_tilde] X_tilde;
   matrix[N, M] X;
-  // Still missing information about the adjacency matrix.
+  
+  // Information about the adjacency matrix
+  int<lower = 0> N_reg;
+  int<lower = 0> N_edges;
+  int<lower = 1, upper = N_reg> node1[N_edges]; // Extremes of edges
+  int<lower = 1, upper = N_reg> node2[N_edges];
+  int<lower = 1, upper = N_reg> region[N]; // Region for each observation
+  
+  // For the "Generated Quantities" block
+  int<lower = 0> N_gen;
+  vector<lower = 0>[N_gen] new_t;
 }
 
 parameters {
@@ -64,7 +76,18 @@ parameters {
   
   real<lower=0> eta;
   real<lower=0> nu;
-  real<lower=0> theta; // Check the constraints.
+  real<lower=0> theta; // Check the constraints
+  
+  vector[N_reg] u_tilde;
+  vector[N_reg] u;
+}
+
+transformed parameters {
+  vector[N] lp_tilde;
+  vector[N] lp;
+  
+  lp_tilde = linear_predictor(N, X_tilde, alpha, region, u_tilde);
+  lp = linear_predictor(N, X, beta, region, u);
 }
 
 model {
@@ -73,13 +96,8 @@ model {
   // --------------
   
   {
-    vector[N] lp_tilde;
-    vector[N] lp;
     vector[N] excessHaz;
     vector[N] cumExcessHaz;
-    
-    lp_tilde = linear_predictor_tilde (N, X_tilde, alpha);
-    lp = linear_predictor (N, X, beta);
     
     excessHaz = hazPGW(N, time .* exp(lp_tilde), eta, nu, theta) .* exp(lp);
     cumExcessHaz = cumHazPGW(N, time .* exp(lp_tilde), eta, nu, theta) .* exp(lp - lp_tilde);
@@ -92,14 +110,25 @@ model {
   // -------------------
   
   // Fixed coefficients
-  alpha ~ normal(0, 10);
-  beta ~ normal(0, 10);
+  target += normal_lpdf(alpha | 0, 10);
+  target += normal_lpdf(beta  | 0, 10);
   
   // PGW scale parameters
-  target += cauchy_lpdf(eta | 0, 1);
+  target += cauchy_lpdf(eta | 0, 1); // It might be misspecified, the posterior sample does not look good. Check it!
   
   // PGW shape parameters
   target += cauchy_lpdf(nu | 0, 1);
   target += gamma_lpdf(theta | 0.5, 0.5);
   
+  // Random effects
+  target += icar_normal_lpdf(u_tilde | N_reg, node1, node1);
+  target += icar_normal_lpdf(u | N_reg, node1, node1);
+  
+}
+
+generated quantities { // Alternatively, one can generate from T, so they compute the "ecdf". But what is its distribution here?
+
+  vector[N_gen] excess_survival; 
+
+  excess_survival = exp(-1 * (cumHazPGW(N, new_t .* exp(lp_tilde), eta, nu, theta) .* exp(lp - lp_tilde)));
 }

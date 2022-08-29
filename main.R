@@ -1,11 +1,30 @@
 library(spdep)
 library(rstan)
+library(parallel)
 
 data <- readRDS(file = "DATA/data.rds")
 map  <- readRDS(file = "DATA/nwengland_map.rds")
 
 adj <- poly2nb(pl = map)
 adj <- nb2mat(neighbours = adj, style = "B")
+
+adj_quantities <- function (adj, unique_regions) {
+  node1 <- c()
+  node2 <- c()
+  for (i in 2:(dim(adj)[1])) { # Lower Triangular Matrix 
+    for (j in 1:(i - 1)) {
+      if (adj[i, j] != 0) { 
+        node1 <- c(node1, unique_regions[i])
+        node2 <- c(node2, unique_regions[j])
+      }
+    }
+  }
+  list(node1 = node1, node2 = node2)
+}
+
+nodes <- adj_quantities(adj, as.numeric(rownames(adj)))
+node1 <- nodes$node1
+node2 <- nodes$node2
 
 ### Data Preparation
 
@@ -26,6 +45,11 @@ X <- as.matrix(cbind(rep(1, N), data[X_names]))
 colnames(X) <- c("int", X_names) # Intercept + covariates
 M <- ncol(X)
 
+# For Generated Quantities
+N_gen <- 101
+range_time <- round(range(data$time))
+new_t <- seq(from = range_time[1], to = range_time[2], length.out = N_gen)
+
 # Stan data object
 data_stan <- list(N = N,
                   N_cens = N_cens,
@@ -35,29 +59,37 @@ data_stan <- list(N = N,
                   time = data$time,
                   pop_haz = data$pop.haz,
                   X_tilde = X_tilde,
-                  X = X #, still missing information about the adjacency matrix
-                 )
+                  X = X,
+                  N_reg = nrow(adj),
+                  N_edges = length(node1),
+                  node1 = node1,
+                  node2 = node2,
+                  region = as.integer(data$region),
+                  N_gen = N_gen, # Improve the generation procedure
+                  new_t = new_t)
 
 ### Stan Modeling
 
-chains <- 2
-iter <- 2e3
-warmup <- 1e3
+seed <- 1
+chains <- 4
+iter <- 20e3 
+warmup <- 18e3
 
-start.time <- Sys.time()
+start_time <- Sys.time()
 
 fit <- stan(file = "model.stan", 
             data = data_stan,
             chains = chains,
             iter = iter,
             warmup = warmup,
-            # control = list(adapt_delta = 0.99)
-            ) # Include parallelization
+            seed = seed,
+            control = list(adapt_delta = 0.99),
+            cores = getOption(x = "mc.cores", default = detectCores())) 
 
-end.time <- Sys.time()
-time.taken <- end.time - start.time
-time.taken
+end_time <- Sys.time()
+time_taken <- end_time - start_time
+time_taken
 
-saveRDS(object = fit, file = "DATA/fitted_no_random_effects.rds")
+# saveRDS(object = fit, file = "DATA/fitted_random_effects.rds")
 
 fitted_data <- rstan::extract(fit)
