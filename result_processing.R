@@ -1,5 +1,31 @@
+hazPGW <- function (time, eta, nu, theta) {
+  N <- length(time)
+  result <- c()
+  for (i in 1:N) { 
+    result <- c(result, nu / (theta * eta ^ nu) * time[i] ^ (nu - 1) * (1 + (time[i] / eta) ^ nu) ^ ((1 / theta) - 1))
+  }
+  result
+}
 
-# Write a function to compute S(t) based on the estimated parameters.
+cumHazPGW <- function (time, eta, nu, theta) {
+  N <- length(time)
+  result <- c()
+  for (i in 1:N) { 
+    result <- c(result, - 1 + (1 + (time[i] / eta) ^ nu) ^ (1 / theta))
+  }
+  result
+}
 
-fit <- readRDS(file = "DATA/fitted_random_effects.rds")
-fitted_data <- rstan::extract(fit)
+estSurv <- function (cumHaz) {
+  exp(-cumHaz)
+}
+
+linear_predictor <- function (X, fixed_coeff, region, random_effect) {
+  if (ncol(X) != length(fixed_coeff)) {
+    stop("Dimension mismatch.")
+  } else {
+    lp <- X %*% fixed_coeff + random_effect[as.integer(region)]
+  }
+  lp
+}
+

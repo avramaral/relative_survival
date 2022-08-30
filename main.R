@@ -2,8 +2,8 @@ library(spdep)
 library(rstan)
 library(parallel)
 
-source('utils.R')
-source('generated_quantities.R')
+source("utils.R")
+source("result_processing.R")
 
 data <- readRDS(file = "DATA/data.rds")
 map  <- readRDS(file = "DATA/nwengland_map.rds")
@@ -120,7 +120,7 @@ for (j in 6001:8000) { # Samples were arbitrarily chosen as the fourth chain and
   lines(x = new_time, y = estSurviv[, j, new_region], col = rgb(red = 0.5, green = 0.5, blue = 0.5, alpha = 0.2))
 }
 
-# Excess Surival plot for all regions with averaged curves
+# Excess Survival plot for all regions with averaged curves
 estSurviv_curves <- apply(X = estSurviv[, 6001:8000, ], MARGIN = c(1, 3), FUN = mean) # Samples were arbitrarily chosen as the fourth chain
 par(family = 'LM Roman 10', mfrow = c(1, 1))
 plot(x = NA, y = NA, main = paste("All regions"), xlab = "Time", ylab = "Excess Survival", xlim = c(new_time[1], tail(new_time, 1)), ylim = c(0, 1))
