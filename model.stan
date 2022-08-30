@@ -110,7 +110,7 @@ model {
   target += normal_lpdf(beta  | 0, 10);
   
   // PGW scale parameters
-  target += cauchy_lpdf(eta | 0, 1); // It might be misspecified, the posterior sample does not look good. Check it!
+  target += cauchy_lpdf(eta | 0, 1); // Check all the priors
   
   // PGW shape parameters
   target += cauchy_lpdf(nu | 0, 1);

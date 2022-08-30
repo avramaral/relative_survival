@@ -45,11 +45,6 @@ X <- as.matrix(cbind(rep(1, N), data[X_names]))
 colnames(X) <- c("int", X_names) # Intercept + covariates
 M <- ncol(X)
 
-# For Generated Quantities
-N_gen <- 101
-range_time <- range(data$time)
-new_t <- seq(from = floor(range_time[1]), to = ceiling(range_time[2]), length.out = N_gen)
-
 # Stan data object
 data_stan <- list(N = N,
                   N_cens = N_cens,
@@ -90,4 +85,9 @@ time_taken
 
 saveRDS(object = fit, file = "DATA/fitted_random_effects.rds")
 
-fitted_data <- rstan::extract(fit)
+# fitted_data <- rstan::extract(fit)
+
+# For Generated Quantities
+N_gen <- 101
+range_time <- range(data$time)
+new_t <- seq(from = floor(range_time[1]), to = ceiling(range_time[2]), length.out = N_gen)
