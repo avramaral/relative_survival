@@ -18,21 +18,23 @@ node2 <- nodes$node2
 
 adj_info <- list(N_reg = N_reg, N_edges = length(node1), node1 = node1, node2 = node2)
 
-d <- data_stan(data = data, model = 1, adj_info = adj_info)
+model <- 1
+
+d <- data_stan(data = data, model = model, cov_tilde = c("age"), cov = c("sex", "wbc", "dep"), intercept_tilde = T, intercept = T, adj_info = adj_info)
 str(d)
 
 ### Stan Modeling
 
-model_name <- "PGW1"
+distribution <- "PGW"
 
 seed <- 1
 chains <- 4
-iter <- 10e3 
-warmup <- 8e3
+iter <- 20e3
+warmup <- 18e3
 
 start_time <- Sys.time()
 
-fit <- stan(file = paste(model_name, ".stan", sep = ""), 
+fit <- stan(file = paste(distribution, "/", distribution, model, ".stan", sep = ""), 
             data = d,
             chains = chains,
             iter = iter,
@@ -45,9 +47,5 @@ end_time <- Sys.time()
 time_taken <- end_time - start_time
 time_taken
 
-saveRDS(object = fit, file = paste("DATA/", model_name ,".rds", sep = ""))
-# fit <- readRDS(file = paste("DATA/", model_name ,".rds", sep = ""))
-
-fitted_data <- rstan::extract(fit)
-
-
+# saveRDS(object = fit, file = paste("FITTED_MODELS/", distribution, model, ".rds", sep = ""))
+# fit <- readRDS(file = paste("FITTED_MODELS/", distribution, model, ".rds", sep = ""))
