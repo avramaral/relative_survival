@@ -4,13 +4,17 @@ functions {
   // -------------------------
 
   // Hazard Function
-  vector hazPGW (int N, vector time, real eta, real nu, real theta) { 
+  vector hazPGW (int N, vector time, real eta, real nu, real theta, int L) { 
     vector[N] res;
     for (i in 1:N) {
-      res[i] = nu / (theta * pow(eta, nu)) * pow(time[i], (nu - 1)) * pow(1 + pow((time[i] / eta), nu), ((1 / theta) - 1));
+      res[i] = log(nu) - log(theta) - nu * log(eta) + (nu - 1) * log(time[i]) + ((1 / theta) - 1) * log(1 + pow((time[i] / eta), nu));
     }
-  
-    return res;
+    
+    if (L == 1) {
+      return res;
+    } else {
+      return exp(res);
+    }
   }
   
   // Cumulative Hazard Function 
@@ -21,7 +25,7 @@ functions {
     }
     
     return res;
-  } // Check the expression!
+  } 
 
   // ------
   // Others
@@ -70,9 +74,9 @@ parameters {
   vector[M_tilde] alpha;
   vector[M] beta;
   
-  real<lower=0> eta;
-  real<lower=0> nu;
-  real<lower=0> theta; // Check the constraints
+  real log_eta;
+  real log_nu;
+  real log_theta;
   
   vector[N_reg] u_tilde;
   vector[N_reg] u;
@@ -81,6 +85,14 @@ parameters {
 transformed parameters {
   vector[N] lp_tilde;
   vector[N] lp;
+  
+  real<lower=0> eta;
+  real<lower=0> nu; 
+  real<lower=0> theta;
+  
+  eta = exp(log_eta);
+  nu = exp(log_nu);
+  theta = exp(log_theta);
   
   lp_tilde = linear_predictor(N, X_tilde, alpha, region, u_tilde);
   lp = linear_predictor(N, X, beta, region, u);
@@ -95,7 +107,7 @@ model {
     vector[N] excessHaz;
     vector[N] cumExcessHaz;
     
-    excessHaz = hazPGW(N, time .* exp(lp_tilde), eta, nu, theta) .* exp(lp);
+    excessHaz = hazPGW(N, time .* exp(lp_tilde), eta, nu, theta, 0) .* exp(lp);
     cumExcessHaz = cumHazPGW(N, time .* exp(lp_tilde), eta, nu, theta) .* exp(lp - lp_tilde);
     
     target += sum(log(pop_haz[cens] + excessHaz[cens])) - sum(cumExcessHaz);
@@ -106,24 +118,20 @@ model {
   // -------------------
   
   // Fixed coefficients
-  target += normal_lpdf(alpha | 0, 10);
-  target += normal_lpdf(beta  | 0, 10);
+  alpha ~ normal(0, 10);
+  beta  ~ normal(0, 10);
   
   // PGW scale parameters
-  target += cauchy_lpdf(eta | 0, 1); // Check all the priors
+  target += cauchy_lpdf(log_eta | 0, 2.5); 
   
   // PGW shape parameters
-  target += cauchy_lpdf(nu | 0, 1);
-  target += gamma_lpdf(theta | 0.5, 0.5);
+  target += cauchy_lpdf(log_nu | 0, 2.5);
+  target += cauchy_lpdf(log_theta | 0, 2.5); // Check all the priors
   
   // Random effects
-  target += icar_normal_lpdf(u_tilde | N_reg, node1, node1);
-  target += icar_normal_lpdf(u | N_reg, node1, node1);
+  target += icar_normal_lpdf(u_tilde | N_reg, node1, node2);
+  target += icar_normal_lpdf(u | N_reg, node1, node2);
   
 }
 
 // generated quantities { } 
-/* 
-One can generate from T, so they compute the "ecdf". But what is its distribution here?
-Also, it dependes on the covariates. 
-*/
