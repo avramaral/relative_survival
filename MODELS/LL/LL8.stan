@@ -38,8 +38,8 @@ model {
     
     lp = linear_predictor(N, X, beta);
     
-    excessHaz = hazLN(N, time, mu, sigma, 0) .* exp(lp);
-    cumExcessHaz = cumHazLN(N, time, mu, sigma) .* exp(lp);
+    excessHaz = hazLL(N, time .* exp(lp), mu, sigma, 0) .* exp(lp);
+    cumExcessHaz = cumHazLL(N, time .* exp(lp), mu, sigma);
     
     target += sum(log(pop_haz[obs] + excessHaz[obs])) - sum(cumExcessHaz);
   }
@@ -51,10 +51,10 @@ model {
   // Fixed coefficients
   beta ~ normal(0, 100);
   
-  // LN location parameters
+  // LL location parameters
   target += normal_lpdf(mu | 0, 100); 
   
-  // LN scale parameters
+  // LL scale parameters
   target += cauchy_lpdf(log_sigma | 0, 5); // Check all the priors
   
 }
