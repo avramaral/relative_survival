@@ -40,12 +40,83 @@ fit <- stan(file = paste("MODELS/", distribution, "/", distribution, model, ".st
             iter = iter,
             warmup = warmup,
             # seed = seed,
-            control = list(adapt_delta = 0.99),
+            control = list(adapt_delta = 0.80),
             cores = getOption(x = "mc.cores", default = detectCores())) 
 
 end_time <- Sys.time()
 time_taken <- end_time - start_time
 time_taken
 
-# saveRDS(object = fit, file = paste("FITTED_MODELS/", distribution, model, ".rds", sep = ""))
-# fit <- readRDS(file = paste("FITTED_MODELS/", distribution, model, ".rds", sep = ""))
+# saveRDS(object = fit, file = paste("FITTED_MODELS/", distribution, "/", distribution, model, ".rds", sep = ""))
+# fit <- readRDS(file = paste("FITTED_MODELS/", distribution, "/", distribution, model, ".rds", sep = ""))
+
+fitted_data <- extract(fit)
+N_samples <- length(fitted_data$lp__)
+
+check_n_cov <- function (var) {
+  if (is.null(var)) {
+    m <- 0
+  } else {
+    m <- ncol(var)
+  }
+  m
+}
+
+lp <- function (m, int, cov, coeff) {
+  if (m != 0) {
+    if (int) {
+      cov <- c(1, cov)
+    }
+    lp <- cov %*% coeff
+  } else {
+    lp <- matrix(0, 1, 0)
+  }
+  as.numeric(lp)
+}
+
+# re <- function (model) {
+#   if (model == 1) {
+#     
+#   } else if (model == 2)
+# } 
+
+# Set it as empty initially in the function
+cov_tilde <- c(1.5) # "age"
+cov <- c(1, 0.5, 1.2) # "sex", "wbc", "dep"
+intercept <- T
+intercept_tilde <- T
+
+m_tilde <- check_n_cov(var = fitted_data$alpha)
+m <- check_n_cov(var = fitted_data$beta)
+
+if (((length(cov_tilde) + as.integer(intercept_tilde)) != m_tilde) | ((length(cov) + as.integer(intercept)) != m)) {
+  stop("Provide the correct values for covariates.")
+}
+
+for (i in 1:N_samples) {
+  lp_tilde <- compute_design_mat(m = m_tilde, int = intercept_tilde, cov = cov_tilde, coeff = fitted_data$alpha[i, ])
+  lp <- compute_design_mat(m = m, int = intercept, cov = cov, coeff = fitted_data$beta[i, ])
+  
+  # NOW I HAVE TO INCLUDE THE RANDOM EFFECTS SOMEHOW
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
