@@ -13,21 +13,16 @@ data {
 parameters {
   vector[M_tilde] alpha;
   
-  real log_eta;
-  real log_nu;
-  real log_theta;
+  real mu;
+  real log_sigma;
 }
 
 transformed parameters {
   
-  real<lower=0> eta;
-  real<lower=0> nu; 
-  real<lower=0> theta;
+  real<lower=0> sigma;
   
-  eta = exp(log_eta);
-  nu = exp(log_nu);
-  theta = exp(log_theta);
-  
+  sigma = exp(log_sigma);
+
 }
 
 model {
@@ -43,8 +38,8 @@ model {
     
     lp_tilde = linear_predictor(N, X_tilde, alpha);
     
-    excessHaz = hazPGW(N, time .* exp(lp_tilde), eta, nu, theta, 0);
-    cumExcessHaz = cumHazPGW(N, time .* exp(lp_tilde), eta, nu, theta) .* exp(-lp_tilde);
+    excessHaz = hazLN(N, time .* exp(lp_tilde), mu, sigma, 0);
+    cumExcessHaz = cumHazLN(N, time .* exp(lp_tilde), mu, sigma) .* exp(-lp_tilde);
     
     target += sum(log(pop_haz[obs] + excessHaz[obs])) - sum(cumExcessHaz);
   }
@@ -54,14 +49,13 @@ model {
   // -------------------
   
   // Fixed coefficients
-  alpha ~ normal(0, 10);
+  alpha ~ normal(0, 100);
   
-  // PGW scale parameters
-  target += cauchy_lpdf(log_eta | 0, 2.5); 
+  // LN location parameters
+  target += normal_lpdf(mu | 0, 100); 
   
-  // PGW shape parameters
-  target += cauchy_lpdf(log_nu | 0, 2.5);
-  target += cauchy_lpdf(log_theta | 0, 2.5); // Check all the priors
+  // LN scale parameters
+  target += cauchy_lpdf(log_sigma | 0, 5); // Check all the priors
   
 }
 

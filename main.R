@@ -34,7 +34,7 @@ warmup <- 18e3
 
 start_time <- Sys.time()
 
-fit <- stan(file = paste(distribution, "/", distribution, model, ".stan", sep = ""), 
+fit <- stan(file = paste("MODELS/", distribution, "/", distribution, model, ".stan", sep = ""), 
             data = d,
             chains = chains,
             iter = iter,

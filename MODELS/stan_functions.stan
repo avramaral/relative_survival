@@ -1,9 +1,65 @@
 functions {
-  // -------------------------
-  // Power Generalized Weibull
-  // -------------------------
+  // ---------------
+  // Log Normal (LN)
+  // ---------------
 
-  // Hazard Function
+  // Hazard Function LN
+  vector hazLN (int N, vector time, real mu, real sigma, int L) { 
+    vector[N] res;
+    for (i in 1:N) {
+      res[i] = normal_lpdf(time[i] | mu, sigma) - normal_lccdf(time[i] | mu, sigma);
+    }
+    
+    if (L == 1) {
+      return res;
+    } else {
+      return exp(res);
+    }
+  }
+  
+  // Cumulative Hazard Function LN
+  vector cumHazLN (int N, vector time, real mu, real sigma) { 
+    vector[N] res;
+    for (i in 1:N) {
+      res[i] = - normal_lccdf(time[i] | mu, sigma);
+    }
+
+    return res;
+  } 
+  
+  // -----------------
+  // Log Logistic (LL)
+  // -----------------
+
+  // Hazard Function LL
+  vector hazLL (int N, vector time, real mu, real sigma, int L) { 
+    vector[N] res;
+    for (i in 1:N) {
+      res[i] = logistic_lpdf(log(time[i]) | mu, sigma) - log(time[i]) - logistic_lccdf(log(time[i]) | mu, sigma);
+    }
+    
+    if (L == 1) {
+      return res;
+    } else {
+      return exp(res);
+    }
+  }
+  
+  // Cumulative Hazard Function LL
+  vector cumHazLL (int N, vector time, real mu, real sigma) { 
+    vector[N] res;
+    for (i in 1:N) {
+      res[i] = - logistic_lccdf(log(time[i]) | mu, sigma);
+    }
+    
+    return res;
+  }
+  
+  // -------------------------------
+  // Power Generalized Weibull (PGW)
+  // -------------------------------
+
+  // Hazard Function PGW
   vector hazPGW (int N, vector time, real eta, real nu, real theta, int L) { 
     vector[N] res;
     for (i in 1:N) {
@@ -17,7 +73,7 @@ functions {
     }
   }
   
-  // Cumulative Hazard Function 
+  // Cumulative Hazard Function PGW
   vector cumHazPGW (int N, vector time, real eta, real nu, real theta) { 
     vector[N] res;
     for (i in 1:N) {
@@ -51,7 +107,7 @@ functions {
     return res;
   }
   
-  // Distribution function for the ICAR model with constraint to the sum of u's
+  // Distribution function for the ICAR model with constraint for the sum of u's = 0
   // Reference: Bayesian hierarchical spatial models: Implementing the Besag York Mollié model in Stan
   real icar_normal_lpdf (vector random_effect, int N_reg, int[] node1, int[] node2) { // For a general random effect "random_effect"
     return -0.5 * dot_self(random_effect[node1] - random_effect[node2]) + normal_lpdf(sum(random_effect) | 0, 0.001 * N_reg);

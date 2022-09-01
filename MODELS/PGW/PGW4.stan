@@ -28,7 +28,7 @@ parameters {
 }
 
 transformed parameters {
-  
+
   real<lower=0> eta;
   real<lower=0> nu; 
   real<lower=0> theta;
@@ -52,8 +52,8 @@ model {
     
     lp = linear_predictor_re(N, X, beta, region, u);
     
-    excessHaz = hazPGW(N, time .* exp(lp), eta, nu, theta, 0) .* exp(lp);
-    cumExcessHaz = cumHazPGW(N, time .* exp(lp), eta, nu, theta);
+    excessHaz = hazPGW(N, time, eta, nu, theta, 0) .* exp(lp);
+    cumExcessHaz = cumHazPGW(N, time, eta, nu, theta) .* exp(lp);
     
     target += sum(log(pop_haz[obs] + excessHaz[obs])) - sum(cumExcessHaz);
   }
@@ -63,14 +63,14 @@ model {
   // -------------------
   
   // Fixed coefficients
-  beta ~ normal(0, 10);
+  beta ~ normal(0, 100);
   
   // PGW scale parameters
-  target += cauchy_lpdf(log_eta | 0, 2.5); 
+  target += cauchy_lpdf(log_eta | 0, 5); 
   
   // PGW shape parameters
-  target += cauchy_lpdf(log_nu | 0, 2.5);
-  target += cauchy_lpdf(log_theta | 0, 2.5); // Check all the priors
+  target += cauchy_lpdf(log_nu | 0, 5);
+  target += cauchy_lpdf(log_theta | 0, 5); // Check all the priors
   
   // Random effects
   target += icar_normal_lpdf(u | N_reg, node1, node2);

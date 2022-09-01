@@ -43,8 +43,8 @@ model {
     
     lp = linear_predictor(N, X, beta);
     
-    excessHaz = hazPGW(N, time, eta, nu, theta, 0) .* exp(lp);
-    cumExcessHaz = cumHazPGW(N, time, eta, nu, theta) .* exp(lp);
+    excessHaz = hazPGW(N, time .* exp(lp), eta, nu, theta, 0) .* exp(lp);
+    cumExcessHaz = cumHazPGW(N, time .* exp(lp), eta, nu, theta);
     
     target += sum(log(pop_haz[obs] + excessHaz[obs])) - sum(cumExcessHaz);
   }
@@ -54,14 +54,14 @@ model {
   // -------------------
   
   // Fixed coefficients
-  beta ~ normal(0, 10);
+  beta ~ normal(0, 100);
   
   // PGW scale parameters
-  target += cauchy_lpdf(log_eta | 0, 2.5); 
+  target += cauchy_lpdf(log_eta | 0, 5); 
   
   // PGW shape parameters
-  target += cauchy_lpdf(log_nu | 0, 2.5);
-  target += cauchy_lpdf(log_theta | 0, 2.5); // Check all the priors
+  target += cauchy_lpdf(log_nu | 0, 5);
+  target += cauchy_lpdf(log_theta | 0, 5); // Check all the priors
   
 }
 

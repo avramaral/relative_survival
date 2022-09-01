@@ -26,8 +26,7 @@ parameters {
   real log_eta;
   real log_nu;
   real log_theta;
-  
-  vector[N_reg] u_tilde;
+
   vector[N_reg] u;
 }
 
@@ -40,7 +39,7 @@ transformed parameters {
   eta = exp(log_eta);
   nu = exp(log_nu);
   theta = exp(log_theta);
-
+  
 }
 
 model {
@@ -51,11 +50,11 @@ model {
   {
     vector[N] lp_tilde;
     vector[N] lp;
-  
+    
     vector[N] excessHaz;
     vector[N] cumExcessHaz;
     
-    lp_tilde = linear_predictor_re(N, X_tilde, alpha, region, u_tilde);
+    lp_tilde = linear_predictor_re(N, X_tilde, alpha, region, u);
     lp = linear_predictor_re(N, X, beta, region, u);
     
     excessHaz = hazPGW(N, time .* exp(lp_tilde), eta, nu, theta, 0) .* exp(lp);
@@ -69,18 +68,17 @@ model {
   // -------------------
   
   // Fixed coefficients
-  alpha ~ normal(0, 10);
-  beta ~ normal(0, 10);
+  alpha ~ normal(0, 100);
+  beta ~ normal(0, 100);
   
   // PGW scale parameters
-  target += cauchy_lpdf(log_eta | 0, 2.5); 
+  target += cauchy_lpdf(log_eta | 0, 5); 
   
   // PGW shape parameters
-  target += cauchy_lpdf(log_nu | 0, 2.5);
-  target += cauchy_lpdf(log_theta | 0, 2.5); // Check all the priors
+  target += cauchy_lpdf(log_nu | 0, 5);
+  target += cauchy_lpdf(log_theta | 0, 5); // Check all the priors
   
   // Random effects
-  target += icar_normal_lpdf(u_tilde | N_reg, node1, node2);
   target += icar_normal_lpdf(u | N_reg, node1, node2);
   
 }

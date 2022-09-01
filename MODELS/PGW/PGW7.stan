@@ -8,13 +8,6 @@ data {
   vector<lower = 0>[N] time;
   vector<lower = 0>[N] pop_haz;
   matrix[N, M] X;
-  
-  // Information about the adjacency matrix
-  int<lower = 0> N_reg;
-  int<lower = 0> N_edges;
-  int<lower = 1, upper = N_reg> node1[N_edges]; // Extremes of edges
-  int<lower = 1, upper = N_reg> node2[N_edges];
-  int<lower = 1, upper = N_reg> region[N]; // Region for each observation
 }
 
 parameters {
@@ -23,12 +16,10 @@ parameters {
   real log_eta;
   real log_nu;
   real log_theta;
-
-  vector[N_reg] u;
 }
 
 transformed parameters {
-
+  
   real<lower=0> eta;
   real<lower=0> nu; 
   real<lower=0> theta;
@@ -50,7 +41,7 @@ model {
     vector[N] excessHaz;
     vector[N] cumExcessHaz;
     
-    lp = linear_predictor_re(N, X, beta, region, u);
+    lp = linear_predictor(N, X, beta);
     
     excessHaz = hazPGW(N, time, eta, nu, theta, 0) .* exp(lp);
     cumExcessHaz = cumHazPGW(N, time, eta, nu, theta) .* exp(lp);
@@ -63,17 +54,14 @@ model {
   // -------------------
   
   // Fixed coefficients
-  beta ~ normal(0, 10);
+  beta ~ normal(0, 100);
   
   // PGW scale parameters
-  target += cauchy_lpdf(log_eta | 0, 2.5); 
+  target += cauchy_lpdf(log_eta | 0, 5); 
   
   // PGW shape parameters
-  target += cauchy_lpdf(log_nu | 0, 2.5);
-  target += cauchy_lpdf(log_theta | 0, 2.5); // Check all the priors
-  
-  // Random effects
-  target += icar_normal_lpdf(u | N_reg, node1, node2);
+  target += cauchy_lpdf(log_nu | 0, 5);
+  target += cauchy_lpdf(log_theta | 0, 5); // Check all the priors
   
 }
 
