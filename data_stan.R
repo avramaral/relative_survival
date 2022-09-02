@@ -29,17 +29,6 @@ data_stan <- function (data, model, cov_tilde = c(), cov = c(), intercept_tilde 
   data
 }
 
-design_matrix <- function (data, N, cov, intercept, ...) {
-  X_names <- cov
-  int <- data.frame()[1:N, ]
-  if (intercept) { int <- rep(1, N) }
-  X <- as.matrix(cbind(int, data[X_names]))
-  rownames(X) <- NULL
-  if (intercept) { colnames(X) <- c("int", X_names) } else { colnames(X) <- X_names }
-  M <- ncol(X)
-  list(X = X, M = M)
-}
-
 data_modelX <- function (data, pre_computed, cov_tilde, cov, intercept_tilde, intercept, pop.haz, time, region, adj_info, ...) { # Works for models 1, 2, and 3
   
   if (length(adj_info) == 0) {
