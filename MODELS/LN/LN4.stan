@@ -58,13 +58,13 @@ model {
   // -------------------
   
   // Fixed coefficients
-  beta ~ normal(0, 100);
+  beta ~ normal(0, 10);
   
   // LN location parameters
-  target += normal_lpdf(mu | 0, 100); 
+  target += normal_lpdf(mu | 0, 10); 
   
   // LN scale parameters
-  target += cauchy_lpdf(log_sigma | 0, 5); // Check all the priors
+  target += cauchy_lpdf(log_sigma | 0, 1); // Check all the priors
   
   // Random effects
   target += icar_normal_lpdf(u | N_reg, node1, node2);

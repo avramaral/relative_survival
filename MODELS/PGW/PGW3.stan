@@ -68,15 +68,15 @@ model {
   // -------------------
   
   // Fixed coefficients
-  alpha ~ normal(0, 100);
-  beta ~ normal(0, 100);
+  alpha ~ normal(0, 10);
+  beta ~ normal(0, 10);
   
   // PGW scale parameters
-  target += cauchy_lpdf(log_eta | 0, 5); 
+  target += cauchy_lpdf(log_eta | 0, 1); 
   
   // PGW shape parameters
-  target += cauchy_lpdf(log_nu | 0, 5);
-  target += cauchy_lpdf(log_theta | 0, 5); // Check all the priors
+  target += cauchy_lpdf(log_nu | 0, 1);
+  target += cauchy_lpdf(log_theta | 0, 1); // Check all the priors
   
   // Random effects
   target += icar_normal_lpdf(u | N_reg, node1, node2);

@@ -17,8 +17,8 @@ result_processing <- function (model, fitted_data, N_samples, N_reg, distributio
       progressbar <- txtProgressBar(min = 1, max = N_samples, initial = 1) 
     }
     for (i in 1:N_samples) {
-      lp_tilde <- compute_lp(m = m_tilde, cov = X_tilde, coeff = fitted_data$alpha[i, ])
-      lp <- compute_lp(m = m, cov = X, coeff = fitted_data$beta[i, ])
+      lp_tilde <- compute_lp(m = m_tilde, X = X_tilde, coeff = fitted_data$alpha[i, ])
+      lp <- compute_lp(m = m, X = X, coeff = fitted_data$beta[i, ])
       
       part <- add_re(model = model, lp_tilde = lp_tilde, lp = lp, random_effects = c(fitted_data$u_tilde[i, j], fitted_data$u[i, j]))
       lp_tilde <- part$lp_re_tilde

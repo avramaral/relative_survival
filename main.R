@@ -33,30 +33,35 @@ distribution <- "LN" # PGW, LN, or LL
 
 seed <- 1
 chains <- 4
-iter <- 100e3
-warmup <- 98e3
+iter <- 50e3
+warmup <- 48e3
 
 start_time <- Sys.time()
 
-fit <- stan(file = paste("MODELS/", distribution, "/", distribution, model, ".stan", sep = ""), 
+fit <- stan(file = paste("MODELS/", distribution, "/", distribution, model, ".stan", sep = ""), # Check the covariates part
             data = d,
             chains = chains,
             iter = iter,
             warmup = warmup,
             # seed = seed,
-            control = list(adapt_delta = 0.80),
+            control = list(adapt_delta = 0.90),
             cores = getOption(x = "mc.cores", default = detectCores())) 
 
 end_time <- Sys.time()
 time_taken <- end_time - start_time
 time_taken
 
+fitted_data <- extract(fit)
+
 saveRDS(object = fit, file = paste("FITTED_MODELS/", distribution, "/", distribution, model, ".rds", sep = ""))
 # fit <- readRDS(file = paste("FITTED_MODELS/", distribution, "/", distribution, model, ".rds", sep = ""))
 
 # Assess Fitted Model
 
-### I STILL NEED TO WRITE THIS PART
+par <- fitted_data$alphe[, 1]
+
+par(family = 'LM Roman 10', mfrow = c(1, 1))
+plot_chains(par = par, chains = chains, iter = iter, warmup = warmup)
 
 # Result Processing
 
@@ -76,7 +81,7 @@ netSur <- res$netSur
 
 # Result Visualization
 
-region <- 10
+region <- 1
 par(family = 'LM Roman 10', mfrow = c(1, 1))
 
 plot_summary_curve(time = tail(time, length(time) - 1), obj = excHaz[2:length(time), , ], region = region, ylab = "Excess Hazard", return_values = T)

@@ -43,16 +43,13 @@ check_n_cov <- function (var, ...) {
   m
 }
 
-compute_lp <- function (m, int, cov, coeff, ...) {
+compute_lp <- function (m, X, coeff, ...) {
   if (m != 0) {
-    if (int) {
-      cov <- c(1, cov)
-    }
-    lp <- cov %*% coeff
+    lp <- X %*% coeff
   } else {
-    lp <- 0
+    lp <- as.matrix(rep(x = 0, times = nrow(X)))
   }
-  as.numeric(lp)
+  lp
 }
 
 add_re_aux <- function (lp, random_effect, ...) {
@@ -98,6 +95,17 @@ add_re <- function (model, lp, lp_tilde, random_effects, ...) {
 ### Plots & Visualization ###
 #############################
 
+plot_chains <- function (par, chains, iter, warmup) {
+  n_iter <- (iter - warmup)
+  plot(x = NA, xlim = c(1, n_iter), ylim = c(min(par), max(par)), xlab = "Iterations", ylab = "Parameter")
+  for (i in 1:chains) {
+    lines(x = par[((i - 1) * n_iter + 1):(n_iter * i)], col = i)
+  }
+  legend(x = "bottomright", inset = 0, legend = paste("Chain ", sprintf('%02d', c(1:chains)), sep = ""), col = 1:chains, lty = 1, box.lty = 1, cex = 0.75)
+  p <- recordPlot()
+  p
+}
+
 plot_summary_curve <- function (time, obj, region, ylab = "Net Survival", return_values = F, ...) {
   
   M <- apply(X = obj[, , region], MARGIN = c(1), FUN = mean)
@@ -122,7 +130,7 @@ plot_all_regions <- function (time, obj, N_reg, ylab = "Net Survival", pos_legen
   for (j in 1:N_reg) {
     lines(time, meanCurves[, j], col = j)
   }
-  legend(x = pos_legend, inset = 0.01, legend = paste("Region ", c(1:N_reg), sep = ""), col = 1:N_reg, lty = 1, box.lty = 0, cex = 0.5)
+  legend(x = pos_legend, inset = 0.01, legend = paste("Region ", sprintf('%02d', c(1:N_reg)), sep = ""), col = 1:N_reg, lty = 1, box.lty = 0, cex = 0.5)
   p <- recordPlot()
   
   if (return_values) { return(list(plot = p, meanCurves = meanCurves)) }
