@@ -7,7 +7,7 @@ functions {
   vector hazLN (int N, vector time, real mu, real sigma, int L) { 
     vector[N] res;
     for (i in 1:N) {
-      res[i] = normal_lpdf(time[i] | mu, sigma) - normal_lccdf(time[i] | mu, sigma);
+      res[i] = lognormal_lpdf(time[i] | mu, sigma) - lognormal_lccdf(time[i] | mu, sigma);
     }
     
     if (L == 1) {
@@ -21,7 +21,7 @@ functions {
   vector cumHazLN (int N, vector time, real mu, real sigma) { 
     vector[N] res;
     for (i in 1:N) {
-      res[i] = - normal_lccdf(time[i] | mu, sigma);
+      res[i] = - lognormal_lccdf(time[i] | mu, sigma);
     }
 
     return res;

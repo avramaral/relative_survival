@@ -18,7 +18,7 @@ parameters {
   
   real log_eta;
   real log_nu;
-  real log_theta;
+  real<lower = 0> theta;
 }
 
 model {
@@ -36,8 +36,8 @@ model {
     lp_tilde = linear_predictor(N, X_tilde, alpha);
     lp = linear_predictor(N, X, beta);
     
-    excessHaz = hazPGW(N, time .* exp(lp_tilde), exp(log_eta), exp(log_nu), exp(log_theta), 0) .* exp(lp);
-    cumExcessHaz = cumHazPGW(N, time .* exp(lp_tilde), exp(log_eta), exp(log_nu), exp(log_theta)) .* exp(lp - lp_tilde);
+    excessHaz = hazPGW(N, time .* exp(lp_tilde), exp(log_eta), exp(log_nu), theta, 0) .* exp(lp);
+    cumExcessHaz = cumHazPGW(N, time .* exp(lp_tilde), exp(log_eta), exp(log_nu), theta) .* exp(lp - lp_tilde);
     
     target += sum(log(pop_haz[obs] + excessHaz[obs])) - sum(cumExcessHaz);
   }
@@ -55,7 +55,7 @@ model {
   
   // PGW shape parameters
   target += cauchy_lpdf(log_nu | 0, 1);
-  target += cauchy_lpdf(log_theta | 0, 1); // Check all the priors
+  target += gamma_lpdf(theta | 0.75, 0.75); // Check all the priors
   
 }
 

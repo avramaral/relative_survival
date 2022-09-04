@@ -24,7 +24,6 @@ adj_info <- list(N_reg = N_reg, N_edges = length(node1), node1 = node1, node2 = 
 model <- 6
 
 d <- data_stan(data = data, model = model, cov_tilde = c("age"), cov = c("sex", "wbc", "dep"), intercept_tilde = T, intercept = T, adj_info = adj_info)
-# d <- data_stan(data = data, intercept_tilde = T, intercept = T, model = model)
 # d <- data_stan(data = data, intercept = T, model = model)
 
 str(d)
@@ -61,7 +60,7 @@ saveRDS(object = fit, file = paste("FITTED_MODELS/", distribution, "/", distribu
 # Assess Fitted Model
 
 print(fit)
-pairs(x = fit, pars = c("energy__", "lp__"), include = F)
+pairs(x = fit, pars = c("energy__", "lp__"), include = F) # log = T
 
 par <- fitted_data$mu
 par(family = 'LM Roman 10', mfrow = c(1, 1))
@@ -90,10 +89,10 @@ netSur <- res$netSur
 region <- 1
 par(family = 'LM Roman 10', mfrow = c(1, 1))
 
-plot_summary_curve(time = tail(time, length(time) - 1), obj = excHaz[2:length(time), , ], region = region, ylab = "Excess Hazard", return_values = T)
+plot_summary_curve(time = time, obj = excHaz, region = region, ylab = "Excess Hazard", return_values = T)
 plot_summary_curve(time = time, obj = excCumHaz, region = region, ylab = "Excess Cumulative Hazard", return_values = T)
 plot_summary_curve(time = time, obj = netSur, region = region, return_values = T)
 
-plot_all_regions(time = tail(time, length(time) - 1), obj = excHaz[2:length(time), , ], N_reg = N_reg, ylab = "Excess Hazard", return_values = T)
+plot_all_regions(time = time, obj = excHaz, N_reg = N_reg, ylab = "Excess Hazard", return_values = T)
 plot_all_regions(time = time, obj = excCumHaz, N_reg = N_reg, ylab = "Excess Cumulative Hazard", pos_legend = "topleft", return_values = T)
 plot_all_regions(time = time, obj = netSur, N_reg = N_reg, return_values = T)

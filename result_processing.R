@@ -31,8 +31,8 @@ result_processing <- function (model, fitted_data, N_samples, N_reg, distributio
         excHaz[, i, j] <- hazLL(N = length(time), time = time * exp(lp_tilde), mu = fitted_data$mu[i], sigma = exp(fitted_data$log_sigma[i]), log = F) * exp(lp)
         excCumHaz[, i, j] <- cumHazLL(N = length(time), time = time * exp(lp_tilde), mu = fitted_data$mu[i], sigma = exp(fitted_data$log_sigma[i])) * exp(lp - lp_tilde)
       } else if (distribution == "PGW") {
-        excHaz[, i, j] <- hazPGW(N = length(time), time = time * exp(lp_tilde), eta = exp(fitted_data$log_eta[i]), nu = exp(fitted_data$log_nu[i]), theta = exp(fitted_data$log_theta[i]), log = F) * exp(lp)
-        excCumHaz[, i, j] <- cumHazPGW(N = length(time), time = time * exp(lp_tilde), eta = exp(fitted_data$log_eta[i]), nu = exp(fitted_data$log_nu[i]), theta = exp(fitted_data$log_theta[i])) * exp(lp - lp_tilde)
+        excHaz[, i, j] <- hazPGW(N = length(time), time = time * exp(lp_tilde), eta = exp(fitted_data$log_eta[i]), nu = exp(fitted_data$log_nu[i]), theta = fitted_data$theta[i], log = F) * exp(lp)
+        excCumHaz[, i, j] <- cumHazPGW(N = length(time), time = time * exp(lp_tilde), eta = exp(fitted_data$log_eta[i]), nu = exp(fitted_data$log_nu[i]), theta = fitted_data$theta[i]) * exp(lp - lp_tilde)
       } else {
         stop("Choose a valid distribution.")
       }
