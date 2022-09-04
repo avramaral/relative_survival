@@ -27,18 +27,6 @@ parameters {
   vector[N_reg] u;
 }
 
-transformed parameters {
-
-  real<lower=0> eta;
-  real<lower=0> nu; 
-  real<lower=0> theta;
-  
-  eta = exp(log_eta);
-  nu = exp(log_nu);
-  theta = exp(log_theta);
-  
-}
-
 model {
   // --------------
   // Log-likelihood
@@ -52,8 +40,8 @@ model {
     
     lp = linear_predictor_re(N, X, beta, region, u);
     
-    excessHaz = hazPGW(N, time, eta, nu, theta, 0) .* exp(lp);
-    cumExcessHaz = cumHazPGW(N, time, eta, nu, theta) .* exp(lp);
+    excessHaz = hazPGW(N, time, exp(log_eta), exp(log_nu), exp(log_theta), 0) .* exp(lp);
+    cumExcessHaz = cumHazPGW(N, time, exp(log_eta), exp(log_nu), exp(log_theta)) .* exp(lp);
     
     target += sum(log(pop_haz[obs] + excessHaz[obs])) - sum(cumExcessHaz);
   }
@@ -63,7 +51,7 @@ model {
   // -------------------
   
   // Fixed coefficients
-  beta ~ normal(0, 10);
+  for (i in 1:M) { target += normal_lpdf(beta[i] | 0, 1); }
   
   // PGW scale parameters
   target += cauchy_lpdf(log_eta | 0, 1); 

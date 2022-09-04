@@ -23,28 +23,29 @@ adj_info <- list(N_reg = N_reg, N_edges = length(node1), node1 = node1, node2 = 
 model <- 6
 
 d <- data_stan(data = data, model = model, cov_tilde = c("age"), cov = c("sex", "wbc", "dep"), intercept_tilde = T, intercept = T, adj_info = adj_info)
-# d <- data_stan(data = data, model = model)
+# d <- data_stan(data = data, intercept_tilde = T, intercept = T, model = model)
+# d <- data_stan(data = data, intercept = T, model = model)
 
 str(d)
 
 ### Stan Modeling
 
-distribution <- "LN" # PGW, LN, or LL
+distribution <- "PGW" # PGW, LN, or LL
 
 seed <- 1
 chains <- 4
-iter <- 50e3
-warmup <- 48e3
+iter <- 10e3
+warmup <- 8e3
 
 start_time <- Sys.time()
 
-fit <- stan(file = paste("MODELS/", distribution, "/", distribution, model, ".stan", sep = ""), # Check the covariates part
+fit <- stan(file = paste("MODELS/", distribution, "/", distribution, model, ".stan", sep = ""), 
             data = d,
             chains = chains,
             iter = iter,
             warmup = warmup,
             # seed = seed,
-            control = list(adapt_delta = 0.90),
+            control = list(adapt_delta = 0.85, max_treedepth = 10),
             cores = getOption(x = "mc.cores", default = detectCores())) 
 
 end_time <- Sys.time()
@@ -58,8 +59,10 @@ saveRDS(object = fit, file = paste("FITTED_MODELS/", distribution, "/", distribu
 
 # Assess Fitted Model
 
-par <- fitted_data$alphe[, 1]
+print(fit)
+pairs(x = fit, pars = c("energy__", "lp__"), include = F)
 
+par <- fitted_data$mu
 par(family = 'LM Roman 10', mfrow = c(1, 1))
 plot_chains(par = par, chains = chains, iter = iter, warmup = warmup)
 
@@ -68,7 +71,7 @@ plot_chains(par = par, chains = chains, iter = iter, warmup = warmup)
 fitted_data <- extract(fit)
 N_samples <- length(fitted_data$lp__)
 
-time <- seq(from = 0, to = 4, by = 0.025)
+time <- seq(from = 0.025, to = 4, by = 0.025)
 
 X_tilde <- matrix(data = c(1, 1.5), nrow = length(time), ncol = 2, byrow = T) 
 X <- matrix(data = c(1, 1, 0.5, 1.2), nrow = length(time), ncol = 4, byrow = T) 

@@ -17,14 +17,6 @@ parameters {
   real log_sigma;
 }
 
-transformed parameters {
-  
-  real<lower=0> sigma;
-  
-  sigma = exp(log_sigma);
-
-}
-
 model {
   // --------------
   // Log-likelihood
@@ -38,8 +30,8 @@ model {
     
     lp = linear_predictor(N, X, beta);
     
-    excessHaz = hazLN(N, time .* exp(lp), mu, sigma, 0) .* exp(lp);
-    cumExcessHaz = cumHazLN(N, time .* exp(lp), mu, sigma);
+    excessHaz = hazLN(N, time .* exp(lp), mu, exp(log_sigma), 0) .* exp(lp);
+    cumExcessHaz = cumHazLN(N, time .* exp(lp), mu, exp(log_sigma));
     
     target += sum(log(pop_haz[obs] + excessHaz[obs])) - sum(cumExcessHaz);
   }
@@ -49,10 +41,10 @@ model {
   // -------------------
   
   // Fixed coefficients
-  beta ~ normal(0, 10);
+  for (i in 1:M) { target += normal_lpdf(beta[i] | 0, 1); }
   
   // LN location parameters
-  target += normal_lpdf(mu | 0, 10); 
+  target += normal_lpdf(mu | 0, 1); 
   
   // LN scale parameters
   target += cauchy_lpdf(log_sigma | 0, 1); // Check all the priors

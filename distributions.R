@@ -22,10 +22,10 @@ cumHazLN <- function (N, time, mu, sigma, ...) {
   res
 }
 
-### Log Logistic (LG)
+### Log Logistic (LL)
 
 # Hazard Function LG
-hazLN <- function (N, time, mu, sigma, log = T, ...) {
+hazLL <- function (N, time, mu, sigma, log = T, ...) {
   res <- c()
   for (i in 1:N) {
     res <- c(res, dlogis(log(time[i]), mu, sigma, log = T) - log(time[i]) - plogis(log(time[i]), mu, sigma, lower.tail = F, log.p = T))
@@ -37,8 +37,8 @@ hazLN <- function (N, time, mu, sigma, log = T, ...) {
   }
 }
 
-# Cumulative Hazard Function LG
-cumHazLN <- function (N, time, mu, sigma, ...) {
+# Cumulative Hazard Function LL
+cumHazLL <- function (N, time, mu, sigma, ...) {
   res <- c()
   for (i in 1:N) {
     res <- c(res, - plogis(log(time[i]), mu, sigma, lower.tail = F, log.p = T))

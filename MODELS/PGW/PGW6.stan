@@ -21,18 +21,6 @@ parameters {
   real log_theta;
 }
 
-transformed parameters {
-  
-  real<lower=0> eta;
-  real<lower=0> nu; 
-  real<lower=0> theta;
-  
-  eta = exp(log_eta);
-  nu = exp(log_nu);
-  theta = exp(log_theta);
-  
-}
-
 model {
   // --------------
   // Log-likelihood
@@ -48,8 +36,8 @@ model {
     lp_tilde = linear_predictor(N, X_tilde, alpha);
     lp = linear_predictor(N, X, beta);
     
-    excessHaz = hazPGW(N, time .* exp(lp_tilde), eta, nu, theta, 0) .* exp(lp);
-    cumExcessHaz = cumHazPGW(N, time .* exp(lp_tilde), eta, nu, theta) .* exp(lp - lp_tilde);
+    excessHaz = hazPGW(N, time .* exp(lp_tilde), exp(log_eta), exp(log_nu), exp(log_theta), 0) .* exp(lp);
+    cumExcessHaz = cumHazPGW(N, time .* exp(lp_tilde), exp(log_eta), exp(log_nu), exp(log_theta)) .* exp(lp - lp_tilde);
     
     target += sum(log(pop_haz[obs] + excessHaz[obs])) - sum(cumExcessHaz);
   }
@@ -59,8 +47,8 @@ model {
   // -------------------
   
   // Fixed coefficients
-  alpha ~ normal(0, 10);
-  beta ~ normal(0, 10);
+  for (i in 1:M_tilde) { target += normal_lpdf(alpha[i] | 0, 1); }
+  for (i in 1:M) { target += normal_lpdf(beta[i] | 0, 1); }
   
   // PGW scale parameters
   target += cauchy_lpdf(log_eta | 0, 1); 
@@ -71,4 +59,4 @@ model {
   
 }
 
-// generated quantities { } 
+// generated quantities { }
