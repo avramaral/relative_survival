@@ -1,5 +1,6 @@
 library(spdep)
 library(rstan)
+library(shinystan)
 library(parallel)
 
 source("utils.R")
@@ -45,7 +46,7 @@ fit <- stan(file = paste("MODELS/", distribution, "/", distribution, model, ".st
             iter = iter,
             warmup = warmup,
             # seed = seed,
-            control = list(adapt_delta = 0.85, max_treedepth = 10),
+            control = list(adapt_delta = 0.80, max_treedepth = 10),
             cores = getOption(x = "mc.cores", default = detectCores())) 
 
 end_time <- Sys.time()
@@ -65,6 +66,8 @@ pairs(x = fit, pars = c("energy__", "lp__"), include = F)
 par <- fitted_data$mu
 par(family = 'LM Roman 10', mfrow = c(1, 1))
 plot_chains(par = par, chains = chains, iter = iter, warmup = warmup)
+
+launch_shinystan(fit) # Shiny App
 
 # Result Processing
 
