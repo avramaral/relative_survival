@@ -19,6 +19,12 @@ data {
   int<lower = 1, upper = N_reg> region[N]; // Region for each observation
 }
 
+transformed data {
+  vector[N] ind_obs;
+  ind_obs = rep_vector(0.0, N);
+  ind_obs[obs] = rep_vector(1.0, N_obs);
+}
+
 parameters {
   vector[M_tilde] alpha;
   vector[M] beta;
@@ -29,26 +35,26 @@ parameters {
   vector[N_reg] u;
 }
 
+transformed parameters {
+  vector[N] lp_tilde;
+  vector[N] lp;
+  
+  vector[N] excessHaz;
+  vector[N] cumExcessHaz;
+  
+  lp_tilde = linear_predictor(N, X_tilde, alpha);
+  lp = linear_predictor_re(N, X, beta, region, u);
+  
+  excessHaz = hazLL(N, time .* exp(lp_tilde), mu, exp(log_sigma), 0) .* exp(lp);
+  cumExcessHaz = cumHazLL(N, time .* exp(lp_tilde), mu, exp(log_sigma)) .* exp(lp - lp_tilde);
+}
+
 model {
   // --------------
   // Log-likelihood
   // --------------
   
-  {
-    vector[N] lp_tilde;
-    vector[N] lp;
-    
-    vector[N] excessHaz;
-    vector[N] cumExcessHaz;
-    
-    lp_tilde = linear_predictor(N, X_tilde, alpha);
-    lp = linear_predictor_re(N, X, beta, region, u);
-    
-    excessHaz = hazLL(N, time .* exp(lp_tilde), mu, exp(log_sigma), 0) .* exp(lp);
-    cumExcessHaz = cumHazLL(N, time .* exp(lp_tilde), mu, exp(log_sigma)) .* exp(lp - lp_tilde);
-    
-    target += sum(log(pop_haz[obs] + excessHaz[obs])) - sum(cumExcessHaz);
-  }
+  target += sum(log(pop_haz[obs] + excessHaz[obs])) - sum(cumExcessHaz);
   
   // -------------------
   // Prior distributions
@@ -69,4 +75,13 @@ model {
   
 }
 
-// generated quantities { } 
+generated quantities { 
+  vector[N] log_lik;
+  for (i in 1:N) {
+    if (ind_obs[i] == 0.0) {
+      log_lik[i] = - cumExcessHaz[i];
+    } else {
+      log_lik[i] = log(pop_haz[i] + excessHaz[i]) - cumExcessHaz[i];
+    }
+  }
+}

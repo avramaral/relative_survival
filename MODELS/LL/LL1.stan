@@ -37,17 +37,17 @@ parameters {
 }
 
 transformed parameters {
-    vector[N] lp_tilde;
-    vector[N] lp;
+  vector[N] lp_tilde;
+  vector[N] lp;
+
+  vector[N] excessHaz;
+  vector[N] cumExcessHaz;
   
-    vector[N] excessHaz;
-    vector[N] cumExcessHaz;
-    
-    lp_tilde = linear_predictor_re(N, X_tilde, alpha, region, u_tilde);
-    lp = linear_predictor_re(N, X, beta, region, u);
-    
-    excessHaz = hazLL(N, time .* exp(lp_tilde), mu, exp(log_sigma), 0) .* exp(lp);
-    cumExcessHaz = cumHazLL(N, time .* exp(lp_tilde), mu, exp(log_sigma)) .* exp(lp - lp_tilde);
+  lp_tilde = linear_predictor_re(N, X_tilde, alpha, region, u_tilde);
+  lp = linear_predictor_re(N, X, beta, region, u);
+  
+  excessHaz = hazLL(N, time .* exp(lp_tilde), mu, exp(log_sigma), 0) .* exp(lp);
+  cumExcessHaz = cumHazLL(N, time .* exp(lp_tilde), mu, exp(log_sigma)) .* exp(lp - lp_tilde);
 }
 
 model {
