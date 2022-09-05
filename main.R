@@ -70,7 +70,6 @@ launch_shinystan(fit) # Shiny App
 
 # Result Processing
 
-fitted_data <- extract(fit)
 N_samples <- length(fitted_data$lp__)
 
 time <- seq(from = 0.025, to = 4, by = 0.025)
