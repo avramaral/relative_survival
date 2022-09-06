@@ -1,4 +1,4 @@
-result_processing <- function (model, fitted_data, N_samples, N_reg, distribution, time, X_tilde, X, verbose = T, ...) {
+result_processing <- function (model, fitted_data, N_samples, N_reg, distribution, time, X_tilde, X, spatial = F, verbose = T, ...) {
  
   m_tilde <- check_n_cov(var = fitted_data$alpha)
   m <- check_n_cov(var = fitted_data$beta)
@@ -7,13 +7,17 @@ result_processing <- function (model, fitted_data, N_samples, N_reg, distributio
     stop("Provide the correct values for covariates.")
   }
   
+  if (!spatial) {
+    N_reg <- 1
+  }
+  
   excHaz <- array(data = 0, dim = c(length(time), N_samples, N_reg))
   excCumHaz <- array(data = 0, dim = c(length(time), N_samples, N_reg))
   netSur <- array(data = 0, dim = c(length(time), N_samples, N_reg))
   
   for (j in 1:N_reg) {
     if (verbose) { 
-      cat(paste("\nRegion ", sprintf('%02d', j), "\n", sep = ""))
+      cat(ifelse(test = spatial, yes = paste("\nRegion ", sprintf('%02d', j), "\n", sep = ""), no = "ALL\n"))
       progressbar <- txtProgressBar(min = 1, max = N_samples, initial = 1) 
     }
     for (i in 1:N_samples) {

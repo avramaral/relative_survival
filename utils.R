@@ -106,7 +106,11 @@ plot_chains <- function (par, chains, iter, warmup) {
   p
 }
 
-plot_summary_curve <- function (time, obj, region, ylab = "Net Survival", distribution = "PGW", spatial = T, return_values = F, ...) {
+plot_summary_curve <- function (time, obj, region = 1, ylab = "Net Survival", distribution = "PGW", spatial = T, return_values = F, ...) {
+  
+  if (!spatial) {
+    region <- 1
+  }
   
   M <- apply(X = obj[, , region], MARGIN = c(1), FUN = mean)
   L <- apply(X = obj[, , region], MARGIN = c(1), FUN = quantile, prob = c(0.025))
