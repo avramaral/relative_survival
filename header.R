@@ -1,0 +1,10 @@
+library(spdep)
+library(rstan)
+library(parallel)
+library(loo)
+library(bridgesampling)
+
+source("utils.R")
+source("data_stan.R")
+source("distributions.R")
+source("result_processing.R")

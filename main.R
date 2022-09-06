@@ -1,13 +1,4 @@
-library(spdep)
-library(rstan)
-library(parallel)
-library(loo)
-library(bridgesampling)
-
-source("utils.R")
-source("data_stan.R")
-source("distributions.R")
-source("result_processing.R")
+source("header.R")
 
 data <- readRDS(file = "DATA/data.rds")
 map  <- readRDS(file = "DATA/nwengland_map.rds")
@@ -22,21 +13,21 @@ node2 <- nodes$node2
 
 adj_info <- list(N_reg = N_reg, N_edges = length(node1), node1 = node1, node2 = node2)
 
-model <- 6
+model <- 1
 
-d <- data_stan(data = data, model = model, cov_tilde = c("age"), cov = c("sex", "wbc", "dep"), adj_info = adj_info)
+d <- data_stan(data = data, model = model, cov_tilde = c("age"), cov = c("age", "sex", "wbc", "dep"), adj_info = adj_info)
 # d <- data_stan(data = data, model = model)
 
 str(d)
 
 ### Stan Modeling
 
-distribution <- "PGW" # PGW, LN, or LL
+distribution <- "LL" # PGW, LN, or LL
 
 seed <- 1
 chains <- 4
-iter <- 4e3
-warmup <- 2e3
+iter <- 30e3
+warmup <- 28e3
 
 start_time <- Sys.time()
 
@@ -45,10 +36,10 @@ fit <- stan(file = paste("MODELS/", distribution, "/", distribution, model, ".st
             chains = chains,
             iter = iter,
             warmup = warmup,
-            # seed = seed,
+            seed = seed,
             pars = c("lp_tilde", "lp", "excessHaz", "cumExcessHaz"),
             include = F,
-            control = list(adapt_delta = 0.85, max_treedepth = 12),
+            control = list(adapt_delta = 0.85, max_treedepth = 13),
             cores = getOption(x = "mc.cores", default = detectCores())) 
 
 end_time <- Sys.time()
@@ -76,9 +67,11 @@ log_lik <- extract_log_lik(stanfit = fit, merge_chains = F)
 r_eff <- relative_eff(exp(log_lik), cores = getOption(x = "mc.cores", default = detectCores()))
 loo <- loo(x = log_lik, r_eff = r_eff, cores = getOption(x = "mc.cores", default = detectCores()))
 print(loo)
+# loo_compare(list("M1" = loo1, "M2" = loo2))
 
 # "Bayes factor"
-bridge <- bridge_sampler(samples = fitLN, cores = getOption(x = "mc.cores", default = detectCores()), silent = T)
+bridge <- bridge_sampler(samples = fit, cores = getOption(x = "mc.cores", default = detectCores()), silent = T)
+saveRDS(object = bridge, file = paste("FITTED_MODELS/", distribution, "/bridge_", distribution, model, ".rds", sep = ""))
 # bf <- bayes_factor(x1 = bridge1, x2 = bridge2)
 
 ### Result Processing
@@ -87,8 +80,8 @@ N_samples <- length(fitted_data$lp__)
 
 time <- seq(from = 0.025, to = 4, by = 0.025)
 
-X_tilde <- matrix(data = c(1.5), nrow = length(time), ncol = 2, byrow = T) 
-X <- matrix(data = c(1, 0.5, 1.2), nrow = length(time), ncol = 4, byrow = T) 
+X_tilde <- matrix(data = c(1.5), nrow = length(time), ncol = 1, byrow = T) 
+X <- matrix(data = c(1.5, 1, 0.5, 1.2), nrow = length(time), ncol = 4, byrow = T) 
 
 res <- result_processing(model = model, fitted_data = fitted_data, N_samples = N_samples, N_reg = N_reg, distribution = distribution, time = time, X_tilde = X_tilde, X = X)
 
@@ -101,10 +94,10 @@ netSur <- res$netSur
 region <- 1
 par(family = 'LM Roman 10', mfrow = c(1, 1))
 
-plot_summary_curve(time = time, obj = excHaz, region = region, ylab = "Excess Hazard", return_values = T)
-plot_summary_curve(time = time, obj = excCumHaz, region = region, ylab = "Excess Cumulative Hazard", return_values = T)
-plot_summary_curve(time = time, obj = netSur, region = region, return_values = T)
+plot_summary_curve(time = time, obj = excHaz, region = region, ylab = "Excess Hazard", distribution = distribution, return_values = T)
+plot_summary_curve(time = time, obj = excCumHaz, region = region, ylab = "Excess Cumulative Hazard", distribution = distribution, return_values = T)
+plot_summary_curve(time = time, obj = netSur, region = region, distribution = distribution, return_values = T)
 
-plot_all_regions(time = time, obj = excHaz, N_reg = N_reg, ylab = "Excess Hazard", return_values = T)
-plot_all_regions(time = time, obj = excCumHaz, N_reg = N_reg, ylab = "Excess Cumulative Hazard", pos_legend = "topleft", return_values = T)
-plot_all_regions(time = time, obj = netSur, N_reg = N_reg, return_values = T)
+plot_all_regions(time = time, obj = excHaz, N_reg = N_reg, ylab = "Excess Hazard", distribution = distribution, return_values = T)
+plot_all_regions(time = time, obj = excCumHaz, N_reg = N_reg, ylab = "Excess Cumulative Hazard", distribution = distribution, pos_legend = "topleft", return_values = T)
+plot_all_regions(time = time, obj = netSur, N_reg = N_reg, distribution = distribution, return_values = T)

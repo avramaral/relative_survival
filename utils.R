@@ -106,13 +106,13 @@ plot_chains <- function (par, chains, iter, warmup) {
   p
 }
 
-plot_summary_curve <- function (time, obj, region, ylab = "Net Survival", return_values = F, ...) {
+plot_summary_curve <- function (time, obj, region, ylab = "Net Survival", distribution = "PGW", spatial = T, return_values = F, ...) {
   
   M <- apply(X = obj[, , region], MARGIN = c(1), FUN = mean)
   L <- apply(X = obj[, , region], MARGIN = c(1), FUN = quantile, prob = c(0.025))
   U <- apply(X = obj[, , region], MARGIN = c(1), FUN = quantile, prob = c(0.975))
   
-  plot(NA, xlim = c(0, max(time)), ylim = c(0, max(U)), xlab = "Time", ylab = ylab, main = paste("Region ", sprintf('%02d', region), sep = ""))
+  plot(NA, xlim = c(0, max(time)), ylim = c(0, max(U)), xlab = "Time", ylab = ylab, main = ifelse(test = spatial, yes = paste("Region ", sprintf('%02d', region), "(", distribution, ")", sep = ""), no = paste("ALL (", distribution, ")", sep = "")))
   polygon(x = c(time, rev(time)), y = c(L, rev(U)), col = rgb(red = 0, green = 0, blue = 0, alpha = 0.1), border = F)
   lines(x = time, y = M, col = rgb(red = 0.1, green = 0.1, blue = 0.1), lty = 2)
   lines(x = time, y = L, col = rgb(red = 0.1, green = 0.1, blue = 0.1), lty = 1)
@@ -122,11 +122,11 @@ plot_summary_curve <- function (time, obj, region, ylab = "Net Survival", return
   if (return_values) { return(list(plot = p, M = M, L = L, U = U)) }
 }
 
-plot_all_regions <- function (time, obj, N_reg, ylab = "Net Survival", pos_legend = "topright", return_values = F, ...) {
+plot_all_regions <- function (time, obj, N_reg, ylab = "Net Survival", distribution = "PGW", pos_legend = "topright", return_values = F, ...) {
   
   meanCurves <- apply(X = obj, MARGIN = c(1, 3), FUN = mean)
 
-  plot(NA, xlim = c(0, max(time)), ylim = c(0, max(meanCurves)), xlab = "Time", ylab = ylab, main = "All regions")
+  plot(NA, xlim = c(0, max(time)), ylim = c(0, max(meanCurves)), xlab = "Time", ylab = ylab, main = paste("All regions (", distribution, ")", sep = ""))
   for (j in 1:N_reg) {
     lines(time, meanCurves[, j], col = j)
   }
