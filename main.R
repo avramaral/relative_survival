@@ -2,6 +2,7 @@ library(spdep)
 library(rstan)
 library(parallel)
 library(loo)
+library(bridgesampling)
 
 source("utils.R")
 source("data_stan.R")
@@ -21,7 +22,7 @@ node2 <- nodes$node2
 
 adj_info <- list(N_reg = N_reg, N_edges = length(node1), node1 = node1, node2 = node2)
 
-model <- 1
+model <- 6
 
 d <- data_stan(data = data, model = model, cov_tilde = c("age"), cov = c("sex", "wbc", "dep"), adj_info = adj_info)
 # d <- data_stan(data = data, model = model)
@@ -30,12 +31,12 @@ str(d)
 
 ### Stan Modeling
 
-distribution <- "LN" # PGW, LN, or LL
+distribution <- "PGW" # PGW, LN, or LL
 
 seed <- 1
 chains <- 4
-iter <- 20e3
-warmup <- 18e3
+iter <- 4e3
+warmup <- 2e3
 
 start_time <- Sys.time()
 
@@ -68,12 +69,17 @@ par <- fitted_data$mu
 par(family = 'LM Roman 10', mfrow = c(1, 1))
 plot_chains(par = par, chains = chains, iter = iter, warmup = warmup)
 
-# Model Comparison
+## Model Comparison
 
+# "loo"
 log_lik <- extract_log_lik(stanfit = fit, merge_chains = F)
 r_eff <- relative_eff(exp(log_lik), cores = getOption(x = "mc.cores", default = detectCores()))
 loo <- loo(x = log_lik, r_eff = r_eff, cores = getOption(x = "mc.cores", default = detectCores()))
 print(loo)
+
+# "Bayes factor"
+bridge <- bridge_sampler(samples = fitLN, cores = getOption(x = "mc.cores", default = detectCores()), silent = T)
+# bf <- bayes_factor(x1 = bridge1, x2 = bridge2)
 
 ### Result Processing
 
