@@ -1,4 +1,4 @@
-result_processing <- function (model, fitted_data, N_samples, N_reg, distribution, time, X_tilde, X, spatial = F, verbose = T, ...) {
+result_processing <- function (model, fitted_data, N_samples, N_reg, distribution, time, X_tilde, X, spatial = T, verbose = T, ...) {
  
   m_tilde <- check_n_cov(var = fitted_data$alpha)
   m <- check_n_cov(var = fitted_data$beta)

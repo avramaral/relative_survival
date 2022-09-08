@@ -116,7 +116,7 @@ plot_summary_curve <- function (time, obj, region = 1, ylab = "Net Survival", di
   L <- apply(X = obj[, , region], MARGIN = c(1), FUN = quantile, prob = c(0.025))
   U <- apply(X = obj[, , region], MARGIN = c(1), FUN = quantile, prob = c(0.975))
   
-  plot(NA, xlim = c(0, max(time)), ylim = c(0, max(U)), xlab = "Time", ylab = ylab, main = ifelse(test = spatial, yes = paste("Region ", sprintf('%02d', region), "(", distribution, ")", sep = ""), no = paste("ALL (", distribution, ")", sep = "")))
+  plot(NA, xlim = c(0, max(time)), ylim = c(0, max(U)), xlab = "Time", ylab = ylab, main = ifelse(test = spatial, yes = paste("Region ", sprintf('%02d', region), " (", distribution, ")", sep = ""), no = paste("ALL (", distribution, ")", sep = "")))
   polygon(x = c(time, rev(time)), y = c(L, rev(U)), col = rgb(red = 0, green = 0, blue = 0, alpha = 0.1), border = F)
   lines(x = time, y = M, col = rgb(red = 0.1, green = 0.1, blue = 0.1), lty = 2)
   lines(x = time, y = L, col = rgb(red = 0.1, green = 0.1, blue = 0.1), lty = 1)
@@ -126,7 +126,11 @@ plot_summary_curve <- function (time, obj, region = 1, ylab = "Net Survival", di
   if (return_values) { return(list(plot = p, M = M, L = L, U = U)) }
 }
 
-plot_all_regions <- function (time, obj, N_reg, ylab = "Net Survival", distribution = "PGW", pos_legend = "topright", return_values = F, ...) {
+plot_all_regions <- function (time, obj, N_reg, ylab = "Net Survival", distribution = "PGW", spatial = T, pos_legend = "topright", return_values = F, ...) {
+  
+  if (!spatial) {
+    N_reg <- 1
+  } 
   
   meanCurves <- apply(X = obj, MARGIN = c(1, 3), FUN = mean)
 
@@ -134,7 +138,9 @@ plot_all_regions <- function (time, obj, N_reg, ylab = "Net Survival", distribut
   for (j in 1:N_reg) {
     lines(time, meanCurves[, j], col = j)
   }
-  legend(x = pos_legend, inset = 0.01, legend = paste("Region ", sprintf('%02d', c(1:N_reg)), sep = ""), col = 1:N_reg, lty = 1, box.lty = 0, cex = 0.5)
+  if (spatial) {
+    legend(x = pos_legend, inset = 0.01, legend = paste("Region ", sprintf('%02d', c(1:N_reg)), sep = ""), col = 1:N_reg, lty = 1, box.lty = 0, cex = 0.5)
+  }
   p <- recordPlot()
   
   if (return_values) { return(list(plot = p, meanCurves = meanCurves)) }

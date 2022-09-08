@@ -14,7 +14,7 @@ node2 <- nodes$node2
 adj_info <- list(N_reg = N_reg, N_edges = length(node1), node1 = node1, node2 = node2)
 
 model <- 6
-spatial <- ifelse(test = N_reg <= 5, yes = T, no = F)
+spatial <- ifelse(test = model <= 5, yes = T, no = F)
 
 d <- data_stan(data = data, model = model, cov_tilde = c("age"), cov = c("age", "sex", "wbc", "dep"), adj_info = adj_info)
 # d <- data_stan(data = data, model = model)
@@ -81,8 +81,13 @@ N_samples <- length(fitted_data$lp__)
 
 time <- seq(from = 0.025, to = 4, by = 0.025)
 
-X_tilde <- matrix(data = c(1.5), nrow = length(time), ncol = 1, byrow = T) 
-X <- matrix(data = c(1.5, 1, 0.5, 1.2), nrow = length(time), ncol = 4, byrow = T) 
+mu_age <- attr(x = data$age, which = "scaled:center")
+sd_age <- attr(x = data$age, which = "scaled:scale")
+age <- 40 + time
+age <- (age - mu_age) / sd_age
+
+X_tilde <- matrix(data = c(age), ncol = 1, byrow = F) 
+X <- matrix(data = c(age, rep(1, length(time)), rep(0.5, length(time)), rep(1.2, length(time))), ncol = 4, byrow = F) 
 
 res <- result_processing(model = model, fitted_data = fitted_data, N_samples = N_samples, N_reg = N_reg, distribution = distribution, time = time, X_tilde = X_tilde, X = X, spatial = spatial)
 
@@ -100,7 +105,7 @@ plot_summary_curve(time = time, obj = excCumHaz, region = region, ylab = "Excess
 plot_summary_curve(time = time, obj = netSur, region = region, distribution = distribution, spatial = spatial, return_values = T)
 
 if (spatial) {
-  plot_all_regions(time = time, obj = excHaz, N_reg = N_reg, ylab = "Excess Hazard", distribution = distribution, return_values = T)
-  plot_all_regions(time = time, obj = excCumHaz, N_reg = N_reg, ylab = "Excess Cumulative Hazard", distribution = distribution, pos_legend = "topleft", return_values = T)
-  plot_all_regions(time = time, obj = netSur, N_reg = N_reg, distribution = distribution, return_values = T)
+  plot_all_regions(time = time, obj = excHaz, N_reg = N_reg, ylab = "Excess Hazard", distribution = distribution, spatial = spatial, return_values = T)
+  plot_all_regions(time = time, obj = excCumHaz, N_reg = N_reg, ylab = "Excess Cumulative Hazard", distribution = distribution, spatial = spatial, pos_legend = "topleft", return_values = T)
+  plot_all_regions(time = time, obj = netSur, N_reg = N_reg, distribution = distribution, spatial = spatial, return_values = T)
 }
