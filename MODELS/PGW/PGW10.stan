@@ -12,6 +12,9 @@ data {
   vector<lower = 0>[N] pop_haz;
   matrix[N, M_tilde] X_tilde;
   matrix[N, M] X;
+  
+  int<lower = 0> N_reg;
+  int<lower = 1, upper = N_reg> region[N]; // Region for each observation
 }
 
 transformed data {
@@ -40,6 +43,12 @@ parameters {
   real log_eta;
   real log_nu;
   real<lower = 0> theta;
+  
+  vector[N_reg] v_tilde;
+  vector[N_reg] v;
+  
+  real log_sigma_v_tilde;
+  real log_sigma_v;
 }
 
 transformed parameters {
@@ -49,8 +58,8 @@ transformed parameters {
   vector[N] excessHaz;
   vector[N] cumExcessHaz;
   
-  lp_tilde = linear_predictor(N, X_tilde, alpha);
-  lp = linear_predictor(N, X, beta);
+  lp_tilde = linear_predictor_re(N, X_tilde, alpha, region, exp(log_sigma_v_tilde) * v_tilde);
+  lp = linear_predictor_re(N, X, beta, region, exp(log_sigma_v) * v);
   
   excessHaz = hazPGW(N, time .* exp(lp_tilde), exp(log_eta), exp(log_nu), theta, 0) .* exp(lp);
   cumExcessHaz = cumHazPGW(N, time .* exp(lp_tilde), exp(log_eta), exp(log_nu), theta) .* exp(lp - lp_tilde);
@@ -89,6 +98,14 @@ model {
   // PGW shape parameters
   target += cauchy_lpdf(log_nu | 0, 1);
   target += gamma_lpdf(theta | 0.75, 0.75); // Check all the priors
+  
+  // Random effects
+  target += normal_lpdf(v_tilde | 0, 1);
+  target += normal_lpdf(v | 0, 1);
+  
+  // Hyperpriors
+  target += normal_lpdf(log_sigma_v_tilde | 0, 1); 
+  target += normal_lpdf(log_sigma_v | 0, 1); 
   
 }
 

@@ -16,14 +16,16 @@ adj_info <- list(N_reg = N_reg, N_edges = length(node1), node1 = node1, node2 = 
 model <- 6
 spatial <- ifelse(test = model <= 5, yes = T, no = F)
 
-d <- data_stan(data = data, model = model, cov_tilde = c("age"), cov = c("age", "sex", "wbc", "dep"), adj_info = adj_info)
+# scale spline
+
+d <- data_stan(data = data, model = model, cov_tilde = c("age"), cov = c("wbc", "sex", "dep"), nonlinear = c("age"), df = 3, adj_info = adj_info)
 # d <- data_stan(data = data, model = model)
 
 str(d)
 
 ### Stan Modeling
 
-distribution <- "PGW" # PGW, LN, or LL
+distribution <- "LN" # PGW, LN, or LL
 
 seed <- 1
 chains <- 4
@@ -49,8 +51,15 @@ time_taken
 
 fitted_data <- extract(fit)
 
-saveRDS(object = fit, file = paste("FITTED_MODELS/", distribution, "/", distribution, model, ".rds", sep = ""))
+# saveRDS(object = fit, file = paste("FITTED_MODELS/", distribution, "/", distribution, model, ".rds", sep = ""))
 # fit <- readRDS(file = paste("FITTED_MODELS/", distribution, "/", distribution, model, ".rds", sep = ""))
+
+
+
+
+
+
+
 
 ### Assess Fitted Model
 
@@ -86,8 +95,11 @@ sd_age <- attr(x = data$age, which = "scaled:scale")
 age <- 40 + time
 age <- (age - mu_age) / sd_age
 
+#time_bs <- bs(data$age, df = 3)[, 1:3] 
+
 X_tilde <- matrix(data = c(age), ncol = 1, byrow = F) 
 X <- matrix(data = c(age, rep(1, length(time)), rep(0.5, length(time)), rep(1.2, length(time))), ncol = 4, byrow = F) 
+#X <- matrix(data = c(rep(time_bs[682, 1], length(time)), rep(time_bs[682, 2], length(time)), rep(time_bs[682, 3], length(time)), age, rep(1, length(time)), rep(0.5, length(time)), rep(1.2, length(time))), ncol = 7, byrow = F) 
 
 res <- result_processing(model = model, fitted_data = fitted_data, N_samples = N_samples, N_reg = N_reg, distribution = distribution, time = time, X_tilde = X_tilde, X = X, spatial = spatial)
 

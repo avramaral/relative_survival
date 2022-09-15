@@ -21,7 +21,20 @@ adj_quantities <- function (adj, unique_regions, ...) {
 
 ### "data_stan.R" Functions
 
-design_matrix <- function (data, N, cov, intercept, ...) {
+matrix_spline <- function (data, nonlinear, df, ...) {
+  
+  X <- matrix(data = 0, nrow = nrow(data), ncol = 0)
+  if (length(nonlinear)) {
+    for (i in 1:length(nonlinear)) {
+      X <- cbind(X, bs(x = data[[nonlinear[i]]], df = df)[, 1:df])
+    }
+    colnames(X) <- paste(rep(nonlinear, each = df), rep(1:df, times = length(nonlinear)), sep = "_")
+  }
+  
+  X
+}
+
+design_matrix <- function (data, N, cov, intercept, spl = matrix(data = 0, nrow = 1, ncol = 0), ...) {
   X_names <- cov
   int <- data.frame()[1:N, ]
   if (intercept) { int <- rep(1, N) }
@@ -29,6 +42,7 @@ design_matrix <- function (data, N, cov, intercept, ...) {
   rownames(X) <- NULL
   if (intercept) { colnames(X) <- c("int", X_names) } else { colnames(X) <- X_names }
   M <- ncol(X)
+  if (ncol(spl)) { X <- cbind(spl, X); M <- M + ncol(spl) }
   list(X = X, M = M)
 }
 

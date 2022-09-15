@@ -3,6 +3,7 @@ library(rstan)
 library(parallel)
 library(loo)
 library(bridgesampling)
+library(splines)
 
 source("utils.R")
 source("data_stan.R")

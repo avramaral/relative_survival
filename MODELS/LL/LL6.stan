@@ -5,6 +5,8 @@ data {
   int<lower = 0> N_obs;
   int<lower = 0> M_tilde;
   int<lower = 0> M;
+  int<lower = 0> M_spl;
+  int<lower = 0> df;
   int<lower = 1, upper = N> obs[N_obs];
   vector<lower = 0>[N] time;
   vector<lower = 0>[N] pop_haz;
@@ -16,6 +18,19 @@ transformed data {
   vector[N] ind_obs;
   ind_obs = rep_vector(0.0, N);
   ind_obs[obs] = rep_vector(1.0, N_obs);
+  
+  int<lower = 0> N_spl;
+  N_spl = M_spl %/% df;
+  
+  array[N_spl] matrix[N, M_spl] X_spl; 
+  array[N_spl] matrix[M_spl, M_spl] B; 
+  
+  if (N_spl != 0) {
+    for (i in 1:N_spl) {
+      X_spl[i] = X[, ((i - 1) * df + 1):(i * df)];
+      B[i] = ((N - (0.5 *  (N - N_obs))) / df) * inverse_spd(X_spl[i]' * X_spl[i]); 
+    }
+  }
 }
 
 parameters {
@@ -51,15 +66,27 @@ model {
   // Prior distributions
   // -------------------
   
-  // Fixed coefficients
-  for (i in 1:M_tilde) { target += normal_lpdf(alpha[i] | 0, 1); }
-  for (i in 1:M) { target += normal_lpdf(beta[i] | 0, 1); }
+  // Non-linear fixed coefficients
+  if (N_spl != 0) {
+    for (i in 1:N_spl) {
+      target += multi_normal_lpdf(beta[((i - 1) * df + 1):(i * df)] | rep_vector(0.0, df), B[i]);
+    }
+  }
+
+  // Linear Fixed coefficients
+  for (i in 1:M_tilde) { 
+    target += normal_lpdf(alpha[i] | 0, 10); 
+  }
+  
+  for (i in (M_spl + 1):M) { 
+    target += normal_lpdf(beta[i] | 0, 10); 
+  }
   
   // LL location parameters
-  target += normal_lpdf(mu | 0, 1); 
+  target += normal_lpdf(mu | 0, 10); 
   
   // LL scale parameters
-  target += cauchy_lpdf(log_sigma | 0, 1); // Check all the priors
+  target += normal_lpdf(log_sigma | 0, 1); // Check all the priors
   
 }
 

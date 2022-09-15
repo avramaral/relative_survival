@@ -61,14 +61,14 @@ model {
   // -------------------
   
   // Fixed coefficients
-  for (i in 1:M_tilde) { target += normal_lpdf(alpha[i] | 0, 1); }
-  for (i in 1:M) { target += normal_lpdf(beta[i] | 0, 1); }
+  for (i in 1:M_tilde) { target += normal_lpdf(alpha[i] | 0, 10); }
+  for (i in 1:M) { target += normal_lpdf(beta[i] | 0, 10); }
   
   // LL location parameters
-  target += normal_lpdf(mu | 0, 1);  
+  target += normal_lpdf(mu | 0, 10);  
   
   // LL scale parameters
-  target += cauchy_lpdf(log_sigma | 0, 1); // Check all the priors
+  target += normal_lpdf(log_sigma | 0, 1); // Check all the priors
   
   // Random effects
   target += icar_normal_lpdf(u | N_reg, node1, node2);
