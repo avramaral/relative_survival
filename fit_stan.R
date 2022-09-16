@@ -21,7 +21,7 @@ fit_stan <- function (data, model, chains = 4, iter = 4e3, warmup = 2e3, adapt_d
   start_time <- Sys.time()
   
   fit <- stan(file = paste("MODELS/", dist, "/", dist, model, ".stan", sep = ""),
-              data = d,
+              data = data,
               chains = chains,
               iter = iter,
               warmup = warmup,
