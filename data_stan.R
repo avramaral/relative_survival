@@ -1,95 +1,133 @@
-data_stan <- function (data, model, cov_tilde = c(), cov = c(), nonlinear = c(), df = 3, intercept_tilde = F, intercept = F, pop.haz = "pop.haz", time = "time", obs = "cens", region = "region", adj_info = list(), ...) {
+
+data_stan <- function(data, model, cov.tilde = c(), cov = c(), nonlinear = c(), df = 3, time = "time", obs = "obs", pop.haz = "pop.haz", region = "region", adj_info = list(), ...) {
   
+  if (!validate_model(model = model)) {
+    stop("Select a valid model.")
+  }
+  
+  model <- substring(text = model, first = c(1, 4), last = c(3, 7))[2]
+  
+  if (model %in% c("ABST", "ABXT", "ABSS", "ABTT", "XBXT", "AASS", "AATT", "BBSS", "BBTT") & length(adj_info) == 0) {
+    stop("Please, provide 'adj_info'.")
+  }
+  
+  if (model %in% c("AASS", "AATT", "BBSS", "BBTT", "AAXX", "BBXX", "AXXX")) {
+    if (!length(nonlinear) == 0) {
+      stop("You cannot include non-linear effects for this model.")
+    }
+    m <- substring(text = model, first = c(1, 2), last = c(1, 4))[1]
+    if (m == "A") {
+      cov <- cov.tilde
+    }
+  }
+  
+  # Pre-computed quantities
   observed <- which(data[[obs]] == 1)
   N <- nrow(data)
   N_obs <- length(observed)
   pre_computed <- list(observed = observed, N = N, N_obs = N_obs)
   
-  if (model == 1) {
-    data <- data_modelX(data = data, pre_computed = pre_computed, cov_tilde = cov_tilde, cov = cov, intercept_tilde = intercept_tilde, intercept = intercept, nonlinear = nonlinear, df = df, pop.haz = pop.haz, time = time, region = region, adj_info  = adj_info)
-  } else if (model == 2) {
-    data <- data_modelX(data = data, pre_computed = pre_computed, cov_tilde = cov_tilde, cov = cov, intercept_tilde = intercept_tilde, intercept = intercept, nonlinear = nonlinear, df = df, pop.haz = pop.haz, time = time, region = region, adj_info  = adj_info)
-  } else if (model == 3) {
-    data <- data_modelX(data = data, pre_computed = pre_computed, cov_tilde = cov_tilde, cov = cov, intercept_tilde = intercept_tilde, intercept = intercept, nonlinear = nonlinear, df = df, pop.haz = pop.haz, time = time, region = region, adj_info  = adj_info)
-  } else if (model == 4) {
-    data <- data_modelY(data = data, pre_computed = pre_computed,                        cov = cov,                                    intercept = intercept, nonlinear = nonlinear, df = df, pop.haz = pop.haz, time = time, region = region, adj_info  = adj_info)
-  } else if (model == 5) {
-    data <- data_modelY(data = data, pre_computed = pre_computed,                        cov = cov,                                    intercept = intercept, nonlinear = nonlinear, df = df, pop.haz = pop.haz, time = time, region = region, adj_info  = adj_info)
-  } else if (model == 6) {
-    data <- data_model6(data = data, pre_computed = pre_computed, cov_tilde = cov_tilde, cov = cov, intercept_tilde = intercept_tilde, intercept = intercept, nonlinear = nonlinear, df = df, pop.haz = pop.haz, time = time)
-  } else if (model == 7) {
-    data <- data_modelZ(data = data, pre_computed = pre_computed,                        cov = cov,                                    intercept = intercept, nonlinear = nonlinear, df = df, pop.haz = pop.haz, time = time)
-  } else if (model == 8) {
-    data <- data_modelZ(data = data, pre_computed = pre_computed,                        cov = cov,                                    intercept = intercept, nonlinear = nonlinear, df = df, pop.haz = pop.haz, time = time)
-  } else if (model == 9) {
-    data <- data_model9(data = data, pre_computed = pre_computed, cov_tilde = cov_tilde,            intercept_tilde = intercept_tilde,                        pop.haz = pop.haz, time = time)
-  } else if (model == 10) {
-    data <- data_model0(data = data, pre_computed = pre_computed, cov_tilde = cov_tilde, cov = cov, intercept_tilde = intercept_tilde, intercept = intercept, nonlinear = nonlinear, df = df, pop.haz = pop.haz, time = time, region = region)
-  } else {
-    stop("Select a valid model.")
-  }
-  data
-}
-
-data_modelX <- function (data, pre_computed, cov_tilde, cov, intercept_tilde, intercept, nonlinear, df, pop.haz, time, region, adj_info, ...) { # Works for models 1, 2, and 3
-  
-  if (length(adj_info) == 0) {
-    stop("Provide 'adj_info.'")
+  if (model == "ABCD") {
+    d <- data_ABCD(data = data, pre_computed = pre_computed, cov.tilde = cov.tilde, cov = cov, nonlinear = nonlinear, df = df, time = time, pop.haz = pop.haz, region = region)
+  } else if (model == "ABST") {
+    d <- data_ABST(data = data, pre_computed = pre_computed, cov.tilde = cov.tilde, cov = cov, nonlinear = nonlinear, df = df, time = time, pop.haz = pop.haz, region = region, adj_info  = adj_info)
+  } else if (model == "ABXT") {
+    d <- data_ABXT(data = data, pre_computed = pre_computed, cov.tilde = cov.tilde, cov = cov, nonlinear = nonlinear, df = df, time = time, pop.haz = pop.haz, region = region, adj_info  = adj_info)
+  } else if (model == "ABSS" | model == "ABTT") {
+    d <- data_ABSS(data = data, pre_computed = pre_computed, cov.tilde = cov.tilde, cov = cov, nonlinear = nonlinear, df = df, time = time, pop.haz = pop.haz, region = region, adj_info  = adj_info)
+  } else if (model == "XBXT") {
+    d <- data_XBXT(data = data, pre_computed = pre_computed,                        cov = cov, nonlinear = nonlinear, df = df, time = time, pop.haz = pop.haz, region = region, adj_info  = adj_info)
+  } else if (model == "AASS" | model == "AATT" | model == "BBSS" | model == "BBTT") {
+    d <- data_AASS(data = data, pre_computed = pre_computed,                        cov = cov, nonlinear = nonlinear, df = df, time = time, pop.haz = pop.haz, region = region, adj_info  = adj_info)
+  } else if (model == "ABXX") {
+    d <- data_ABXX(data = data, pre_computed = pre_computed, cov.tilde = cov.tilde, cov = cov, nonlinear = nonlinear, df = df, time = time, pop.haz = pop.haz)
+  } else if (model == "XBXX") {
+    d <- data_XBXX(data = data, pre_computed = pre_computed,                        cov = cov, nonlinear = nonlinear, df = df, time = time, pop.haz = pop.haz)
+  } else if (model == "AAXX" | model == "BBXX") {
+    d <- data_AAXX(data = data, pre_computed = pre_computed,                        cov = cov, nonlinear = nonlinear, df = df, time = time, pop.haz = pop.haz)
+  } else if (model == "AXXX") {
+    d <- data_AXXX(data = data, pre_computed = pre_computed, cov.tilde = cov.tilde,            nonlinear = nonlinear, df = df, time = time, pop.haz = pop.haz)
   }
   
-  spl <- matrix_spline(data = data, nonlinear = nonlinear, df = df)
-  
-  dm_tilde <- design_matrix(data = data, N = pre_computed$N, cov = cov_tilde, intercept = intercept_tilde)
-  dm <- design_matrix(data = data, N = pre_computed$N, cov = cov, intercept = intercept, spl = spl)
-  
-  list(N = pre_computed$N, N_obs = pre_computed$N_obs, M_tilde = dm_tilde$M, M = dm$M, M_spl = (length(nonlinear) * df), df = df, obs = pre_computed$observed, time = data[[time]], pop_haz = data[[pop.haz]], X_tilde = dm_tilde$X, X = dm$X, N_reg = adj_info$N_reg, N_edges = adj_info$N_edges, node1 = adj_info$node1, node2 = adj_info$node2, region = as.integer(data[[region]]))
+  d
 }
 
-data_modelY <- function (data, pre_computed, cov, intercept, nonlinear, df, pop.haz, time, region, adj_info, ...) {
-  
-  if (length(adj_info) == 0) {
-    stop("Provide 'adj_info.'")
-  }
+data_ABCD <- function (data, pre_computed, cov.tilde, cov, nonlinear, df, time, pop.haz, region, ...) {
   
   spl <- matrix_spline(data = data, nonlinear = nonlinear, df = df)
   
-  dm <- design_matrix(data = data, N = pre_computed$N, cov = cov, intercept = intercept, spl = spl)
-  
-  list(N = pre_computed$N, N_obs = pre_computed$N_obs, M = dm$M, M_spl = (length(nonlinear) * df), df = df, obs = pre_computed$observed, time = data[[time]], pop_haz = data[[pop.haz]], X = dm$X, N_reg = adj_info$N_reg, N_edges = adj_info$N_edges, node1 = adj_info$node1, node2 = adj_info$node2, region = as.integer(data[[region]]))
-}
-
-data_model6 <- function (data, pre_computed, cov_tilde, cov, intercept_tilde, intercept, nonlinear, df, pop.haz, time, ...) {
-  
-  spl <- matrix_spline(data = data, nonlinear = nonlinear, df = df)
-  
-  dm_tilde <- design_matrix(data = data, N = pre_computed$N, cov = cov_tilde, intercept = intercept_tilde)
-  dm <- design_matrix(data = data, N = pre_computed$N, cov = cov, intercept = intercept, spl = spl)
-  
-  list(N = pre_computed$N, N_obs = pre_computed$N_obs, M_tilde = dm_tilde$M, M = dm$M, M_spl = (length(nonlinear) * df), df = df, obs = pre_computed$observed, time = data[[time]], pop_haz = data[[pop.haz]], X_tilde = dm_tilde$X, X = dm$X)
-}
-
-data_modelZ <- function (data, pre_computed, cov, intercept, nonlinear, df, pop.haz, time, ...) {
-  
-  spl <- matrix_spline(data = data, nonlinear = nonlinear, df = df)
-  
-  dm <- design_matrix(data = data, N = pre_computed$N, cov = cov, intercept = intercept, spl = spl)
-  
-  list(N = pre_computed$N, N_obs = pre_computed$N_obs, M = dm$M, M_spl = (length(nonlinear) * df), df = df, obs = pre_computed$observed, time = data[[time]], pop_haz = data[[pop.haz]], X = dm$X)
-}
-
-data_model9 <- function (data, pre_computed, cov_tilde, intercept_tilde, pop.haz, time, ...) {
-  
-  dm_tilde <- design_matrix(data = data, N = pre_computed$N, cov = cov_tilde, intercept = intercept_tilde)
-  
-  list(N = pre_computed$N, N_obs = pre_computed$N_obs, M_tilde = dm_tilde$M, obs = pre_computed$observed, time = data[[time]], pop_haz = data[[pop.haz]], X_tilde = dm_tilde$X)
-}
-
-data_model0 <- function (data, pre_computed, cov_tilde, cov, intercept_tilde, intercept, nonlinear, df, pop.haz, time, region, ...) {
-  
-  spl <- matrix_spline(data = data, nonlinear = nonlinear, df = df)
-  
-  dm_tilde <- design_matrix(data = data, N = pre_computed$N, cov = cov_tilde, intercept = intercept_tilde)
-  dm <- design_matrix(data = data, N = pre_computed$N, cov = cov, intercept = intercept, spl = spl)
+  dm_tilde <- design_matrix(data = data, N = pre_computed$N, cov = cov.tilde)
+  dm <- design_matrix(data = data, N = pre_computed$N, cov = cov, spl = spl)
   
   list(N = pre_computed$N, N_obs = pre_computed$N_obs, M_tilde = dm_tilde$M, M = dm$M, M_spl = (length(nonlinear) * df), df = df, obs = pre_computed$observed, time = data[[time]], pop_haz = data[[pop.haz]], X_tilde = dm_tilde$X, X = dm$X, N_reg = adj_info$N_reg, region = as.integer(data[[region]]))
+  
+}
+
+data_ABST <- function (data, pre_computed, cov.tilde, cov, nonlinear, df, time, pop.haz, region, adj_info, ...) {
+  
+  spl <- matrix_spline(data = data, nonlinear = nonlinear, df = df)
+  
+  dm_tilde <- design_matrix(data = data, N = pre_computed$N, cov = cov.tilde)
+  dm <- design_matrix(data = data, N = pre_computed$N, cov = cov, spl = spl)
+  
+  list(N = pre_computed$N, N_obs = pre_computed$N_obs, M_tilde = dm_tilde$M, M = dm$M, M_spl = (length(nonlinear) * df), df = df, obs = pre_computed$observed, time = data[[time]], pop_haz = data[[pop.haz]], X_tilde = dm_tilde$X, X = dm$X, N_reg = adj_info$N_reg, N_edges = adj_info$N_edges, node1 = adj_info$node1, node2 = adj_info$node2, region = as.integer(data[[region]]))
+  
+}
+
+data_ABXT <- data_ABST
+data_ABSS <- data_ABST
+
+data_XBXT <- function (data, pre_computed, cov, nonlinear, df, time, pop.haz, region, adj_info, ...) {
+  
+  spl <- matrix_spline(data = data, nonlinear = nonlinear, df = df)
+  
+  dm <- design_matrix(data = data, N = pre_computed$N, cov = cov, spl = spl)
+  
+  list(N = pre_computed$N, N_obs = pre_computed$N_obs, M = dm$M, M_spl = (length(nonlinear) * df), df = df, obs = pre_computed$observed, time = data[[time]], pop_haz = data[[pop.haz]], X = dm$X, N_reg = adj_info$N_reg, N_edges = adj_info$N_edges, node1 = adj_info$node1, node2 = adj_info$node2, region = as.integer(data[[region]]))
+  
+}
+
+data_AASS <- function (data, pre_computed, cov, nonlinear, df, time, pop.haz, region, adj_info, ...) {
+  
+  dm <- design_matrix(data = data, N = pre_computed$N, cov = cov)
+  
+  list(N = pre_computed$N, N_obs = pre_computed$N_obs, M = dm$M, obs = pre_computed$observed, time = data[[time]], pop_haz = data[[pop.haz]], X = dm$X, N_reg = adj_info$N_reg, N_edges = adj_info$N_edges, node1 = adj_info$node1, node2 = adj_info$node2, region = as.integer(data[[region]]))
+  
+}
+
+data_ABXX <- function (data, pre_computed, cov.tilde, cov, nonlinear, df, time, pop.haz, ...) {
+  
+  spl <- matrix_spline(data = data, nonlinear = nonlinear, df = df)
+  
+  dm_tilde <- design_matrix(data = data, N = pre_computed$N, cov = cov.tilde)
+  dm <- design_matrix(data = data, N = pre_computed$N, cov = cov, spl = spl)
+  
+  list(N = pre_computed$N, N_obs = pre_computed$N_obs, M_tilde = dm_tilde$M, M = dm$M, M_spl = (length(nonlinear) * df), df = df, obs = pre_computed$observed, time = data[[time]], pop_haz = data[[pop.haz]], X_tilde = dm_tilde$X, X = dm$X)
+  
+}
+
+data_XBXX <- function (data, pre_computed, cov, nonlinear, df, time, pop.haz) {
+  
+  spl <- matrix_spline(data = data, nonlinear = nonlinear, df = df)
+  
+  dm <- design_matrix(data = data, N = pre_computed$N, cov = cov, spl = spl)
+  
+  list(N = pre_computed$N, N_obs = pre_computed$N_obs, M = dm$M, M_spl = (length(nonlinear) * df), df = df, obs = pre_computed$observed, time = data[[time]], pop_haz = data[[pop.haz]], X = dm$X)
+  
+}
+
+data_AAXX <- function (data, pre_computed, cov, nonlinear, df, time, pop.haz) {
+  
+  dm <- design_matrix(data = data, N = pre_computed$N, cov = cov)
+  
+  list(N = pre_computed$N, N_obs = pre_computed$N_obs, M = dm$M, obs = pre_computed$observed, time = data[[time]], pop_haz = data[[pop.haz]], X = dm$X)
+  
+}
+
+data_AXXX <- function (data, pre_computed, cov.tilde, nonlinear, df, time, pop.haz) {
+  
+  dm_tilde <- design_matrix(data = data, N = pre_computed$N, cov = cov.tilde)
+  
+  list(N = pre_computed$N, N_obs = pre_computed$N_obs, M_tilde = dm_tilde$M, obs = pre_computed$observed, time = data[[time]], pop_haz = data[[pop.haz]], X_tilde = dm_tilde$X)
+  
 }
