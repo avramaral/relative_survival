@@ -1,4 +1,32 @@
 functions {
+  // -------------------------------
+  // Power Generalized Weibull (PGW)
+  // -------------------------------
+
+  // Hazard Function PGW
+  vector hazPGW (int N, vector time, real eta, real nu, real theta, int L) { 
+    vector[N] res;
+    for (i in 1:N) {
+      res[i] = log(nu) - log(theta) - nu * log(eta) + (nu - 1) * log(time[i]) + ((1 / theta) - 1) * log(1 + pow((time[i] / eta), nu));
+    }
+    
+    if (L == 1) {
+      return res;
+    } else {
+      return exp(res);
+    }
+  }
+  
+  // Cumulative Hazard Function PGW
+  vector cumHazPGW (int N, vector time, real eta, real nu, real theta) { 
+    vector[N] res;
+    for (i in 1:N) {
+      res[i] = - 1 + pow(1 + pow((time[i] / eta), nu), (1 / theta));
+    }
+    
+    return res;
+  } 
+  
   // ---------------
   // Log Normal (LN)
   // ---------------
@@ -55,15 +83,15 @@ functions {
     return res;
   }
   
-  // -------------------------------
-  // Power Generalized Weibull (PGW)
-  // -------------------------------
+  // ----------------------
+  // Generalized Gamma (GG)
+  // ----------------------
 
-  // Hazard Function PGW
-  vector hazPGW (int N, vector time, real eta, real nu, real theta, int L) { 
+  // Hazard Function GG
+  vector hazGG (int N, vector time, real eta, real nu, real theta, int L) { 
     vector[N] res;
     for (i in 1:N) {
-      res[i] = log(nu) - log(theta) - nu * log(eta) + (nu - 1) * log(time[i]) + ((1 / theta) - 1) * log(1 + pow((time[i] / eta), nu));
+      res[i] = log(theta) - nu * log(eta) - lgamma(nu / theta) + (nu - 1) * log(time[i]) - pow(time[i] / eta, theta) - gamma_lccdf(pow(time[i], theta) | nu / theta, pow(eta, - theta));
     }
     
     if (L == 1) {
@@ -73,16 +101,44 @@ functions {
     }
   }
   
-  // Cumulative Hazard Function PGW
-  vector cumHazPGW (int N, vector time, real eta, real nu, real theta) { 
+  // Cumulative Hazard Function GG
+  vector cumHazGG (int N, vector time, real eta, real nu, real theta) { 
     vector[N] res;
     for (i in 1:N) {
-      res[i] = - 1 + pow(1 + pow((time[i] / eta), nu), (1 / theta));
+      res[i] = - gamma_lccdf(pow(time[i], theta) | nu / theta, pow(eta, - theta));
     }
     
     return res;
   } 
 
+  // -----------
+  // Gamma (GAM)
+  // -----------
+
+  // Hazard Function GAM
+  vector hazGAM (int N, vector time, real eta, real nu, int L) { 
+    vector[N] res;
+    for (i in 1:N) {
+      res[i] = gamma_lpdf(time[i] | nu, 1 / eta) - gamma_lccdf(time[i] | nu, 1 / eta);
+    }
+    
+    if (L == 1) {
+      return res;
+    } else {
+      return exp(res);
+    }
+  }
+  
+  // Cumulative Hazard Function GAM
+  vector cumHazGAM (int N, vector time, real eta, real nu) { 
+    vector[N] res;
+    for (i in 1:N) {
+      res[i] = - gamma_lccdf(time[i] | nu, 1 / eta);
+    }
+    
+    return res;
+  } 
+  
   // ------
   // Others
   // ------

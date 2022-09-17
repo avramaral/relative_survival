@@ -1,4 +1,3 @@
-
 fit_stan <- function (data, model, chains = 4, iter = 4e3, warmup = 2e3, adapt_delta = 0.8, max_treedepth = 10, ...) {
   
   if (!validate_model(model = model)) {
@@ -7,9 +6,11 @@ fit_stan <- function (data, model, chains = 4, iter = 4e3, warmup = 2e3, adapt_d
   
   original_model <- model
   name  <- substring(text = model, first = c(1, 4), last = c(3, 7))
-  dist  <- gsub(pattern = "_", replacement = "", x = name[1])
+  dist  <- name[1]
   model <- name[2]
   
+  if (model == "ABDD") { model <- "ABCC" }
+  if (model == "AADD" | model == "BBCC" | model == "BBDD") { model <- "AACC" }
   if (model == "ABTT") { model <- "ABSS" }
   if (model == "AATT" | model == "BBSS" | model == "BBTT") { model <- "AASS" }
   if (model == "BBXX") { model <- "AAXX" }
@@ -20,7 +21,7 @@ fit_stan <- function (data, model, chains = 4, iter = 4e3, warmup = 2e3, adapt_d
   
   start_time <- Sys.time()
   
-  fit <- stan(file = paste("MODELS/", dist, "/", dist, model, ".stan", sep = ""),
+  fit <- stan(file = paste("MODELS/", gsub(pattern = "_", replacement = "", x = dist), "/", dist, model, ".stan", sep = ""),
               data = data,
               chains = chains,
               iter = iter,

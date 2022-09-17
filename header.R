@@ -4,8 +4,16 @@ library(parallel)
 library(loo)
 library(bridgesampling)
 library(splines)
+library(stringr)
+
+# Optional
+library(ggplot2)
+library(viridis)
+library(gridExtra)
 
 source("models.R")
 source("utils.R")
 source("data_stan.R")
 source("fit_stan.R")
+source("distributions.R")
+source("result_processing.R")
