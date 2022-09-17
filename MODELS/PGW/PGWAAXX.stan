@@ -57,7 +57,7 @@ model {
   
   // PGW shape parameters
   target += cauchy_lpdf(log_nu | 0, 1);
-  target += gamma_lpdf(theta | 0.75, 0.75);
+  target += gamma_lpdf(theta | 0.65, 1 / 1.83); 
   
 }
 
