@@ -116,28 +116,28 @@ functions {
   // -----------
 
   // Hazard Function GAM
-  vector hazGAM (int N, vector time, real eta, real nu, int L) { 
+  vector hazGAM (int N, vector time, real eta, real nu, int L) {
     vector[N] res;
     for (i in 1:N) {
       res[i] = gamma_lpdf(time[i] | nu, 1 / eta) - gamma_lccdf(time[i] | nu, 1 / eta);
     }
-    
+
     if (L == 1) {
       return res;
     } else {
       return exp(res);
     }
   }
-  
+
   // Cumulative Hazard Function GAM
-  vector cumHazGAM (int N, vector time, real eta, real nu) { 
+  vector cumHazGAM (int N, vector time, real eta, real nu) {
     vector[N] res;
     for (i in 1:N) {
       res[i] = - gamma_lccdf(time[i] | nu, 1 / eta);
     }
-    
+
     return res;
-  } 
+  }
   
   // ------
   // Others
