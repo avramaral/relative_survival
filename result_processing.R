@@ -50,8 +50,8 @@ result_processing <- function (fit, model, time, X_tilde, X, verbose = T, ...) {
       lp       <- part$lp_re
       
       if (dist == "PGW") {
-        excHaz[, i, j]    <- hazPGW(N = length(time), time = time * exp(lp_tilde), eta = exp(fitted_data$log_eta[i]), nu = exp(fitted_data$log_nu[i]), theta = fitted_data$theta[i], log = F) * exp(lp)
-        excCumHaz[, i, j] <- cumHazPGW(N = length(time), time = time * exp(lp_tilde), eta = exp(fitted_data$log_eta[i]), nu = exp(fitted_data$log_nu[i]), theta = fitted_data$theta[i]) * exp(lp - lp_tilde)
+        excHaz[, i, j]    <- hazPGW(N = length(time), time = time * exp(lp_tilde), eta = fitted_data$eta[i], nu = fitted_data$nu[i], theta = fitted_data$theta[i], log = F) * exp(lp)
+        excCumHaz[, i, j] <- cumHazPGW(N = length(time), time = time * exp(lp_tilde), eta = fitted_data$eta[i], nu = fitted_data$nu[i], theta = fitted_data$theta[i]) * exp(lp - lp_tilde)
       } else if (dist == "LN") {
         excHaz[, i, j]    <- hazLN(N = length(time), time = time * exp(lp_tilde), mu = fitted_data$mu[i], sigma = exp(fitted_data$log_sigma[i]), log = F) * exp(lp)
         excCumHaz[, i, j] <- cumHazLN(N = length(time), time = time * exp(lp_tilde), mu = fitted_data$mu[i], sigma = exp(fitted_data$log_sigma[i])) * exp(lp - lp_tilde)
@@ -59,11 +59,11 @@ result_processing <- function (fit, model, time, X_tilde, X, verbose = T, ...) {
         excHaz[, i, j]    <- hazLL(N = length(time), time = time * exp(lp_tilde), mu = fitted_data$mu[i], sigma = exp(fitted_data$log_sigma[i]), log = F) * exp(lp)
         excCumHaz[, i, j] <- cumHazLL(N = length(time), time = time * exp(lp_tilde), mu = fitted_data$mu[i], sigma = exp(fitted_data$log_sigma[i])) * exp(lp - lp_tilde)
       } else if (dist == "GG") {
-        excHaz[, i, j]    <- hazGG(N = length(time), time = time * exp(lp_tilde), eta = exp(fitted_data$log_eta[i]), nu = exp(fitted_data$log_nu[i]), theta = fitted_data$theta[i], log = F) * exp(lp)
-        excCumHaz[, i, j] <- cumHazGG(N = length(time), time = time * exp(lp_tilde), eta = exp(fitted_data$log_eta[i]), nu = exp(fitted_data$log_nu[i]), theta = fitted_data$theta[i]) * exp(lp - lp_tilde)
+        excHaz[, i, j]    <- hazGG(N = length(time), time = time * exp(lp_tilde), eta = fitted_data$eta[i], nu = fitted_data$nu[i], theta = fitted_data$theta[i], log = F) * exp(lp)
+        excCumHaz[, i, j] <- cumHazGG(N = length(time), time = time * exp(lp_tilde), eta = fitted_data$eta[i], nu = fitted_data$nu[i], theta = fitted_data$theta[i]) * exp(lp - lp_tilde)
       } else if (dist == "GAM") {
-        excHaz[, i, j]    <- hazGAM(N = length(time), time = time * exp(lp_tilde), eta = exp(fitted_data$log_eta[i]), nu = exp(fitted_data$log_nu[i]), log = F) * exp(lp)
-        excCumHaz[, i, j] <- cumHazGAM(N = length(time), time = time * exp(lp_tilde), eta = exp(fitted_data$log_eta[i]), nu = exp(fitted_data$log_nu[i])) * exp(lp - lp_tilde)
+        excHaz[, i, j]    <- hazGAM(N = length(time), time = time * exp(lp_tilde), eta = fitted_data$eta[i], nu = fitted_data$nu[i], log = F) * exp(lp)
+        excCumHaz[, i, j] <- cumHazGAM(N = length(time), time = time * exp(lp_tilde), eta = fitted_data$eta[i], nu = fitted_data$nu[i]) * exp(lp - lp_tilde)
       } else {
         stop("Choose a valid distribution.")
       }

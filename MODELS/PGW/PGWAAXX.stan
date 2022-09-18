@@ -19,8 +19,8 @@ transformed data {
 parameters {
   vector[M] beta;
   
-  real log_eta;
-  real log_nu;
+  real<lower = 0> eta;
+  real<lower = 0> nu;
   real<lower = 0> theta;
 }
 
@@ -32,8 +32,8 @@ transformed parameters {
   
   lp = linear_predictor(N, X, beta);
   
-  excessHaz = hazPGW(N, time .* exp(lp), exp(log_eta), exp(log_nu), theta, 0) .* exp(lp);
-  cumExcessHaz = cumHazPGW(N, time .* exp(lp), exp(log_eta), exp(log_nu), theta);
+  excessHaz = hazPGW(N, time .* exp(lp), eta, nu, theta, 0) .* exp(lp);
+  cumExcessHaz = cumHazPGW(N, time .* exp(lp), eta, nu, theta);
 }
 
 model {
@@ -53,10 +53,10 @@ model {
   }
   
   // PGW scale parameters
-  target += cauchy_lpdf(log_eta | 0, 1); 
+  target += cauchy_lpdf(eta | 0, 1); 
   
   // PGW shape parameters
-  target += cauchy_lpdf(log_nu | 0, 1);
+  target += cauchy_lpdf(nu | 0, 1);
   target += gamma_lpdf(theta | 0.65, 1 / 1.83); 
   
 }

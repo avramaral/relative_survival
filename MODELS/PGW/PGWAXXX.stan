@@ -19,8 +19,8 @@ transformed data {
 parameters {
   vector[M_tilde] alpha;
   
-  real log_eta;
-  real log_nu;
+  real<lower = 0> eta;
+  real<lower = 0> nu;
   real<lower = 0> theta;
 }
 
@@ -32,8 +32,8 @@ transformed parameters {
   
   lp_tilde = linear_predictor(N, X_tilde, alpha);
   
-  excessHaz = hazPGW(N, time .* exp(lp_tilde), exp(log_eta), exp(log_nu), theta, 0);
-  cumExcessHaz = cumHazPGW(N, time .* exp(lp_tilde), exp(log_eta), exp(log_nu), theta) .* exp(-lp_tilde);
+  excessHaz = hazPGW(N, time .* exp(lp_tilde), eta, nu, theta, 0);
+  cumExcessHaz = cumHazPGW(N, time .* exp(lp_tilde), eta, nu, theta) .* exp(-lp_tilde);
 }
 
 model {
@@ -53,10 +53,10 @@ model {
   }
   
   // PGW scale parameters
-  target += cauchy_lpdf(log_eta | 0, 1); 
+  target += cauchy_lpdf(eta | 0, 1); 
   
   // PGW shape parameters
-  target += cauchy_lpdf(log_nu | 0, 1);
+  target += cauchy_lpdf(nu | 0, 1);
   target += gamma_lpdf(theta | 0.65, 1 / 1.83); 
   
 }
