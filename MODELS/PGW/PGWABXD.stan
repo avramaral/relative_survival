@@ -59,7 +59,7 @@ transformed parameters {
   vector[N] cumExcessHaz;
   
   lp_tilde = linear_predictor(N, X_tilde, alpha);
-  lp = linear_predictor_re(N, X, beta, region, exp(log_sigma_v) * v);
+  lp = linear_predictor_re(N, X, beta, region, v);
   
   excessHaz = hazPGW(N, time .* exp(lp_tilde), exp(log_eta), exp(log_nu), theta, 0) .* exp(lp);
   cumExcessHaz = cumHazPGW(N, time .* exp(lp_tilde), exp(log_eta), exp(log_nu), theta) .* exp(lp - lp_tilde);

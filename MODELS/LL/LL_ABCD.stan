@@ -59,8 +59,8 @@ transformed parameters {
   vector[N] excessHaz;
   vector[N] cumExcessHaz;
   
-  lp_tilde = linear_predictor_re(N, X_tilde, alpha, region, exp(log_sigma_v_tilde) * v_tilde);
-  lp = linear_predictor_re(N, X, beta, region, exp(log_sigma_v) * v);
+  lp_tilde = linear_predictor_re(N, X_tilde, alpha, region, v_tilde);
+  lp = linear_predictor_re(N, X, beta, region, v);
   
   excessHaz = hazLL(N, time .* exp(lp_tilde), mu, exp(log_sigma), 0) .* exp(lp);
   cumExcessHaz = cumHazLL(N, time .* exp(lp_tilde), mu, exp(log_sigma)) .* exp(lp - lp_tilde);
@@ -100,8 +100,8 @@ model {
   target += normal_lpdf(log_sigma | 0, 1); 
   
   // Random effects
-  target += normal_lpdf(v_tilde | 0, 1);
-  target += normal_lpdf(v | 0, 1);
+  target += normal_lpdf(v_tilde | 0, exp(log_sigma_v_tilde));
+  target += normal_lpdf(v | 0, exp(log_sigma_v));
   
   // Hyperpriors
   target += normal_lpdf(log_sigma_v_tilde | 0, 1); 

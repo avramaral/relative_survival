@@ -10,7 +10,7 @@ data$dep <- scale(data$dep)
 map <- readRDS(file = "DATA/nwengland_map.rds")
 adj_info <- adj_list(map = map)
 
-model <- "PGWABXX"
+model <- "PGWABCD"
 dist <- gsub(pattern = "_", replacement = "", x = substring(text = model, first = c(1, 4), last = c(3, 7))[1])
 
 d <- data_stan(data = data, model = model, cov.tilde = c("age"), cov = c("age", "wbc", "sex", "dep"), nonlinear = c(), adj_info = adj_info)

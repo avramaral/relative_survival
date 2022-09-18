@@ -37,7 +37,7 @@ transformed parameters {
   vector[N] excessHaz;
   vector[N] cumExcessHaz;
   
-  lp = linear_predictor_re(N, X, beta, region, exp(log_sigma_v) * v);
+  lp = linear_predictor_re(N, X, beta, region, v);
   
   excessHaz = hazPGW(N, time .* exp(lp), exp(log_eta), exp(log_nu), theta, 0) .* exp(lp);
   cumExcessHaz = cumHazPGW(N, time .* exp(lp), exp(log_eta), exp(log_nu), theta);
@@ -67,7 +67,7 @@ model {
   target += gamma_lpdf(theta | 0.65, 1 / 1.83); 
   
   // Random effects
-  target += normal_lpdf(v | 0, 1);
+  target += normal_lpdf(v | 0, exp(log_sigma_v));
   
   // Hyperpriors
   target += normal_lpdf(log_sigma_v | 0, 1); 
