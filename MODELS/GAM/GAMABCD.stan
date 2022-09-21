@@ -102,10 +102,10 @@ model {
   // Random effects
   target += normal_lpdf(v_tilde | 0, exp(log_sigma_v_tilde));
   target += normal_lpdf(v | 0, exp(log_sigma_v));
-  
+
   // Hyperpriors
-  target += normal_lpdf(log_sigma_v_tilde | 0, 1); 
-  target += normal_lpdf(log_sigma_v | 0, 1); 
+  target += normal_lpdf(log_sigma_v_tilde | 0, 1);
+  target += normal_lpdf(log_sigma_v | 0, 1);
   
   if (N_spl != 0) {
     for (i in 1:N_spl) {
