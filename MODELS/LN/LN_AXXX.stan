@@ -20,7 +20,7 @@ parameters {
   vector[M_tilde] alpha;
   
   real mu;
-  real log_sigma;
+  real<lower = 0> sigma;
 }
 
 transformed parameters {
@@ -31,8 +31,8 @@ transformed parameters {
   
   lp_tilde = linear_predictor(N, X_tilde, alpha);
   
-  excessHaz = hazLN(N, time .* exp(lp_tilde), mu, exp(log_sigma), 0);
-  cumExcessHaz = cumHazLN(N, time .* exp(lp_tilde), mu, exp(log_sigma)) .* exp(-lp_tilde);
+  excessHaz = hazLN(N, time .* exp(lp_tilde), mu, sigma, 0);
+  cumExcessHaz = cumHazLN(N, time .* exp(lp_tilde), mu, sigma) .* exp(-lp_tilde);
 }
 
 model {
@@ -55,7 +55,7 @@ model {
   target += normal_lpdf(mu | 0, 10); 
   
   // LN scale parameters
-  target += normal_lpdf(log_sigma | 0, 1);
+  target += cauchy_lpdf(sigma | 0, 1);
   
 }
 

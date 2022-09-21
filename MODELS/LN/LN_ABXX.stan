@@ -38,9 +38,9 @@ parameters {
   vector[M] beta;
   
   real mu;
-  real log_sigma;
+  real<lower = 0> sigma;
   
-  vector[N_spl] log_sigma_B;
+  vector<lower = 0>[N_spl] sigma_B;
 }
 
 transformed parameters {
@@ -53,8 +53,8 @@ transformed parameters {
   lp_tilde = linear_predictor(N, X_tilde, alpha);
   lp = linear_predictor(N, X, beta);
   
-  excessHaz = hazLN(N, time .* exp(lp_tilde), mu, exp(log_sigma), 0) .* exp(lp);
-  cumExcessHaz = cumHazLN(N, time .* exp(lp_tilde), mu, exp(log_sigma)) .* exp(lp - lp_tilde);
+  excessHaz = hazLN(N, time .* exp(lp_tilde), mu, sigma, 0) .* exp(lp);
+  cumExcessHaz = cumHazLN(N, time .* exp(lp_tilde), mu, sigma) .* exp(lp - lp_tilde);
 }
 
 model {
@@ -71,7 +71,7 @@ model {
   // Non-linear fixed coefficients
   if (N_spl != 0) {
     for (i in 1:N_spl) {
-      target += multi_normal_lpdf(beta[((i - 1) * df + 1):(i * df)] | rep_vector(0.0, df), pow(exp(log_sigma_B[i]), 2) * B[i]);
+      target += multi_normal_lpdf(beta[((i - 1) * df + 1):(i * df)] | rep_vector(0.0, df), pow(sigma_B[i], 2) * B[i]);
     }
   }
 
@@ -88,12 +88,12 @@ model {
   target += normal_lpdf(mu | 0, 10); 
   
   // LN scale parameters
-  target += normal_lpdf(log_sigma | 0, 1); 
+  target += cauchy_lpdf(sigma | 0, 1); 
   
   // Hyperpriors
   if (N_spl != 0) {
     for (i in 1:N_spl) {
-      target += normal_lpdf(log_sigma_B[i] | 0, 1);
+      target += cauchy_lpdf(sigma_B[i] | 0, 1);
     }
   }
 }

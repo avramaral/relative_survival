@@ -26,7 +26,7 @@ parameters {
   vector[M] beta;
   
   real mu;
-  real log_sigma;
+  real<lower = 0> sigma;
 
   vector[N_reg] u;
 }
@@ -39,8 +39,8 @@ transformed parameters {
   
   lp = linear_predictor_re(N, X, beta, region, u);
   
-  excessHaz = hazLL(N, time .* exp(lp), mu, exp(log_sigma), 0) .* exp(lp);
-  cumExcessHaz = cumHazLL(N, time .* exp(lp), mu, exp(log_sigma));
+  excessHaz = hazLL(N, time .* exp(lp), mu, sigma, 0) .* exp(lp);
+  cumExcessHaz = cumHazLL(N, time .* exp(lp), mu, sigma);
 }
 
 model {
@@ -63,7 +63,7 @@ model {
   target += normal_lpdf(mu | 0, 10); 
   
   // LL scale parameters
-  target += normal_lpdf(log_sigma | 0, 1); 
+  target += cauchy_lpdf(sigma | 0, 1); 
   
   // Random effects
   target += icar_normal_lpdf(u | N_reg, node1, node2);

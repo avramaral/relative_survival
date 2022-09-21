@@ -27,7 +27,7 @@ parameters {
 
   vector[N_reg] v;
   
-  real log_sigma_v;
+  real<lower = 0> sigma_v;
 }
 
 transformed parameters {
@@ -65,10 +65,10 @@ model {
   target += cauchy_lpdf(nu | 0, 1);
   
   // Random effects
-  target += normal_lpdf(v | 0, exp(log_sigma_v));
+  target += normal_lpdf(v | 0, sigma_v);
   
   // Hyperpriors
-  target += normal_lpdf(log_sigma_v | 0, 1); 
+  target += lognormal_lpdf(sigma_v | 1, 1); 
   
 }
 

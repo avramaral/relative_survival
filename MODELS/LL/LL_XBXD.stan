@@ -38,13 +38,13 @@ parameters {
   vector[M] beta;
   
   real mu;
-  real log_sigma;
+  real<lower = 0> sigma;
 
   vector[N_reg] v;
   
-  real log_sigma_v;
+  real<lower = 0> sigma_v;
   
-  vector[N_spl] log_sigma_B;
+  vector<lower = 0>[N_spl] sigma_B;
 }
 
 transformed parameters {
@@ -55,8 +55,8 @@ transformed parameters {
   
   lp = linear_predictor_re(N, X, beta, region, v);
   
-  excessHaz = hazLL(N, time, mu, exp(log_sigma), 0) .* exp(lp);
-  cumExcessHaz = cumHazLL(N, time, mu, exp(log_sigma)) .* exp(lp);
+  excessHaz = hazLL(N, time, mu, sigma, 0) .* exp(lp);
+  cumExcessHaz = cumHazLL(N, time, mu, sigma) .* exp(lp);
 }
 
 model {
@@ -73,7 +73,7 @@ model {
   // Non-linear fixed coefficients
   if (N_spl != 0) {
     for (i in 1:N_spl) {
-      target += multi_normal_lpdf(beta[((i - 1) * df + 1):(i * df)] | rep_vector(0.0, df), pow(exp(log_sigma_B[i]), 2) * B[i]);
+      target += multi_normal_lpdf(beta[((i - 1) * df + 1):(i * df)] | rep_vector(0.0, df), pow(sigma_B[i], 2) * B[i]);
     }
   }
 
@@ -86,17 +86,17 @@ model {
   target += normal_lpdf(mu | 0, 10); 
   
   // LL scale parameters
-  target += normal_lpdf(log_sigma | 0, 1); 
+  target += cauchy_lpdf(sigma | 0, 1); 
   
   // Random effects
-  target += normal_lpdf(v | 0, exp(log_sigma_v));
+  target += normal_lpdf(v | 0, sigma_v);
   
   // Hyperpriors
-  target += normal_lpdf(log_sigma_v | 0, 1); 
+  target += lognormal_lpdf(sigma_v | 1, 1); 
   
   if (N_spl != 0) {
     for (i in 1:N_spl) {
-      target += normal_lpdf(log_sigma_B[i] | 0, 1);
+      target += cauchy_lpdf(sigma_B[i] | 0, 1);
     }
   }
 }

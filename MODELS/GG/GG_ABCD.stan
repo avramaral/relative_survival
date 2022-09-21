@@ -47,10 +47,10 @@ parameters {
   vector[N_reg] v_tilde;
   vector[N_reg] v;
   
-  real log_sigma_v_tilde;
-  real log_sigma_v;
+  real<lower = 0> sigma_v_tilde;
+  real<lower = 0> sigma_v;
   
-  vector[N_spl] log_sigma_B;
+  vector<lower = 0>[N_spl] sigma_B;
 }
 
 transformed parameters {
@@ -81,7 +81,7 @@ model {
   // Non-linear fixed coefficients
   if (N_spl != 0) {
     for (i in 1:N_spl) {
-      target += multi_normal_lpdf(beta[((i - 1) * df + 1):(i * df)] | rep_vector(0.0, df), pow(exp(log_sigma_B[i]), 2) * B[i]);
+      target += multi_normal_lpdf(beta[((i - 1) * df + 1):(i * df)] | rep_vector(0.0, df), pow(sigma_B[i], 2) * B[i]);
     }
   }
 
@@ -102,16 +102,16 @@ model {
   target += gamma_lpdf(theta | 0.65, 1 / 1.83); 
   
   // Random effects
-  target += normal_lpdf(v_tilde | 0, exp(log_sigma_v_tilde));
-  target += normal_lpdf(v | 0, exp(log_sigma_v));
+  target += normal_lpdf(v_tilde | 0, sigma_v_tilde);
+  target += normal_lpdf(v | 0, sigma_v);
   
   // Hyperpriors
-  target += normal_lpdf(log_sigma_v_tilde | 0, 1); 
-  target += normal_lpdf(log_sigma_v | 0, 1); 
+  target += lognormal_lpdf(sigma_v_tilde | 1, 1); 
+  target += lognormal_lpdf(sigma_v | 1, 1); 
   
   if (N_spl != 0) {
     for (i in 1:N_spl) {
-      target += normal_lpdf(log_sigma_B[i] | 0, 1);
+      target += cauchy_lpdf(sigma_B[i] | 0, 1);
     }
   }
 }

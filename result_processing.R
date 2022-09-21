@@ -1,13 +1,20 @@
-result_processing <- function (fit, model, time, X_tilde, X, verbose = T, ...) {
+result_processing <- function (fit, model, time, X_tilde = matrix(data = NA, nrow = length(time), ncol = 0), X = matrix(data = NA, nrow = length(time), ncol = 0), verbose = T, ...) {
   
   if (!class(fit) == "stanfit") {
     stop("'fit' must be a 'stanfit' object.")
   }
   
   fitted_data <- extract(fit) 
-  m_tilde <- check_n_cov(var = fitted_data$alpha)
-  m <- check_n_cov(var = fitted_data$beta)
+  fix_coeff <- substring(text = model, first = c(4, 5), last = c(4, 5))
   
+  if (fix_coeff[1] == fix_coeff[2]) {
+    m_tilde <- check_n_cov(var = fitted_data$beta)
+    m <- check_n_cov(var = fitted_data$beta)
+  } else {
+    m_tilde <- check_n_cov(var = fitted_data$alpha)
+    m <- check_n_cov(var = fitted_data$beta)
+  }
+
   if ((ncol(X_tilde) != m_tilde) | (ncol(X) != m)) {
     stop("Provide 'X' and 'X_tilde' with correct number of columns.")
   }
@@ -41,9 +48,15 @@ result_processing <- function (fit, model, time, X_tilde, X, verbose = T, ...) {
       progressbar <- txtProgressBar(min = 1, max = N_samples, initial = 1) 
     }
     
+    # Vectorize this operation
     for (i in 1:N_samples) {
-      lp_tilde <- compute_lp(m = m_tilde, X = X_tilde, coeff = fitted_data$alpha[i, ])
-      lp       <- compute_lp(m = m, X = X, coeff = fitted_data$beta[i, ])
+      if (fix_coeff[1] == fix_coeff[2]) {
+        lp_tilde <- compute_lp(m = m_tilde, X = X_tilde, coeff = fitted_data$beta[i, ])
+        lp       <- compute_lp(m = m, X = X, coeff = fitted_data$beta[i, ])
+      } else {
+        lp_tilde <- compute_lp(m = m_tilde, X = X_tilde, coeff = fitted_data$alpha[i, ])
+        lp       <- compute_lp(m = m, X = X, coeff = fitted_data$beta[i, ])
+      }
       
       part     <- add_re(fitted_data = fitted_data, model = model, lp_tilde = lp_tilde, lp = lp, i = i, j = j)
       lp_tilde <- part$lp_re_tilde
@@ -53,11 +66,11 @@ result_processing <- function (fit, model, time, X_tilde, X, verbose = T, ...) {
         excHaz[, i, j]    <- hazPGW(N = length(time), time = time * exp(lp_tilde), eta = fitted_data$eta[i], nu = fitted_data$nu[i], theta = fitted_data$theta[i], log = F) * exp(lp)
         excCumHaz[, i, j] <- cumHazPGW(N = length(time), time = time * exp(lp_tilde), eta = fitted_data$eta[i], nu = fitted_data$nu[i], theta = fitted_data$theta[i]) * exp(lp - lp_tilde)
       } else if (dist == "LN") {
-        excHaz[, i, j]    <- hazLN(N = length(time), time = time * exp(lp_tilde), mu = fitted_data$mu[i], sigma = exp(fitted_data$log_sigma[i]), log = F) * exp(lp)
-        excCumHaz[, i, j] <- cumHazLN(N = length(time), time = time * exp(lp_tilde), mu = fitted_data$mu[i], sigma = exp(fitted_data$log_sigma[i])) * exp(lp - lp_tilde)
+        excHaz[, i, j]    <- hazLN(N = length(time), time = time * exp(lp_tilde), mu = fitted_data$mu[i], sigma = fitted_data$sigma[i], log = F) * exp(lp)
+        excCumHaz[, i, j] <- cumHazLN(N = length(time), time = time * exp(lp_tilde), mu = fitted_data$mu[i], sigma = fitted_data$sigma[i]) * exp(lp - lp_tilde)
       } else if (dist == "LL") {
-        excHaz[, i, j]    <- hazLL(N = length(time), time = time * exp(lp_tilde), mu = fitted_data$mu[i], sigma = exp(fitted_data$log_sigma[i]), log = F) * exp(lp)
-        excCumHaz[, i, j] <- cumHazLL(N = length(time), time = time * exp(lp_tilde), mu = fitted_data$mu[i], sigma = exp(fitted_data$log_sigma[i])) * exp(lp - lp_tilde)
+        excHaz[, i, j]    <- hazLL(N = length(time), time = time * exp(lp_tilde), mu = fitted_data$mu[i], sigma = fitted_data$sigma[i], log = F) * exp(lp)
+        excCumHaz[, i, j] <- cumHazLL(N = length(time), time = time * exp(lp_tilde), mu = fitted_data$mu[i], sigma = fitted_data$sigma[i]) * exp(lp - lp_tilde)
       } else if (dist == "GG") {
         excHaz[, i, j]    <- hazGG(N = length(time), time = time * exp(lp_tilde), eta = fitted_data$eta[i], nu = fitted_data$nu[i], theta = fitted_data$theta[i], log = F) * exp(lp)
         excCumHaz[, i, j] <- cumHazGG(N = length(time), time = time * exp(lp_tilde), eta = fitted_data$eta[i], nu = fitted_data$nu[i], theta = fitted_data$theta[i]) * exp(lp - lp_tilde)
