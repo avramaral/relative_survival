@@ -1,6 +1,6 @@
 source("header.R")
 
-model <- "LN_ABCD"
+model <- "GAMABXX"
 dist <- gsub(pattern = "_", replacement = "", x = substring(text = model, first = c(1, 4), last = c(3, 7))[1])
 
 r <- readRDS(file = paste("FITTED_MODELS/", dist, "/", model, ".rds", sep = ""))
@@ -8,6 +8,7 @@ fit <- r$fit
 
 # Visualization
 
+print(fit, pars = c("log_lik", "u", "u_tilde", "v", "v_tilde"), include = F)
 print(fit, pars = c("log_lik"), include = F)
 pairs(x = fit, pars = c("log_lik", "energy__", "lp__", "v", "v_tilde", "u", "u_tilde"), include = F)
 traceplot(object = fit, pars = c("log_lik", "energy__", "lp__", "v", "v_tilde", "u", "u_tilde"), include = F)

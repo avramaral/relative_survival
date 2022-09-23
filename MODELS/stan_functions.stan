@@ -169,4 +169,8 @@ functions {
     return -0.5 * dot_self(random_effect[node1] - random_effect[node2]) + normal_lpdf(sum(random_effect) | 0, 0.001 * N_reg);
   } 
   
+  real icar_normal_2_lpdf (vector random_effect, real tau, int N_reg, int[] node1, int[] node2) { // For a general random effect "random_effect"
+    return log(pow(tau, ((N_reg - 1) / 2.0)) * exp(-0.5 * tau * dot_self(random_effect[node1] - random_effect[node2]) + normal_lpdf(sum(random_effect) | 0, 0.001 * N_reg)));
+  } 
+  
 }

@@ -5,6 +5,7 @@ library(loo)
 library(bridgesampling)
 library(splines)
 library(stringr)
+library(INLA)
 
 # Optional
 library(ggplot2)

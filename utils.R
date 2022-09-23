@@ -14,7 +14,14 @@ adj_list <- function(map, ...) {
   node1 <- nodes$node1
   node2 <- nodes$node2
   
-  adj_info <- list(N_reg = N_reg, N_edges = length(node1), node1 = node1, node2 = node2)
+  
+  adj.sparse <- sparseMatrix(i = node1, j = node2, x = 1, symmetric = TRUE)
+  Q <- Diagonal(n = N_reg, x = rowSums(adj.sparse)) - adj.sparse
+  Q_pert <- Q + Diagonal(n = N_reg) * max(diag(Q)) * sqrt(.Machine$double.eps)
+  Q_inv <- inla.qinv(Q = Q_pert, constr = list(A = matrix(data = 1, nrow = 1, ncol = N_reg), e = 0))
+  scaling_factor <- exp(mean(log(diag(Q_inv))))
+    
+  adj_info <- list(N_reg = N_reg, N_edges = length(node1), node1 = node1, node2 = node2, scaling_factor = scaling_factor)
   
 }
 

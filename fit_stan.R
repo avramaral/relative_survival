@@ -1,5 +1,5 @@
 fit_stan <- function (data, model, chains = 4, iter = 4e3, warmup = 2e3, adapt_delta = 0.8, max_treedepth = 10, ...) {
-  
+
   if (!validate_model(model = model)) {
     stop("Select a valid model.")
   }
