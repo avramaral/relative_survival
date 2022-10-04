@@ -14,7 +14,6 @@ adj_list <- function(map, ...) {
   node1 <- nodes$node1
   node2 <- nodes$node2
   
-  
   adj.sparse <- sparseMatrix(i = node1, j = node2, x = 1, symmetric = TRUE)
   Q <- Diagonal(n = N_reg, x = rowSums(adj.sparse)) - adj.sparse
   Q_pert <- Q + Diagonal(n = N_reg) * max(diag(Q)) * sqrt(.Machine$double.eps)
