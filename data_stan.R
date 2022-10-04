@@ -98,7 +98,7 @@ data_ABST <- function (data, pre_computed, cov.tilde, cov, nonlinear, df, time, 
   dm_tilde <- design_matrix(data = data, N = pre_computed$N, cov = cov.tilde)
   dm <- design_matrix(data = data, N = pre_computed$N, cov = cov, spl = spl)
   
-  list(N = pre_computed$N, N_obs = pre_computed$N_obs, M_tilde = dm_tilde$M, M = dm$M, M_spl = (length(nonlinear) * df), df = df, obs = pre_computed$observed, time = data[[time]], pop_haz = data[[pop.haz]], X_tilde = dm_tilde$X, X = dm$X, N_reg = adj_info$N_reg, N_edges = adj_info$N_edges, node1 = adj_info$node1, node2 = adj_info$node2, region = as.integer(data[[region]]), scaling_factor = adj_info$scaling_factor)
+  list(N = pre_computed$N, N_obs = pre_computed$N_obs, M_tilde = dm_tilde$M, M = dm$M, M_spl = (length(nonlinear) * df), df = df, obs = pre_computed$observed, time = data[[time]], pop_haz = data[[pop.haz]], X_tilde = dm_tilde$X, X = dm$X, N_reg = adj_info$N_reg, N_edges = adj_info$N_edges, node1 = adj_info$node1, node2 = adj_info$node2, region = as.integer(data[[region]]))
   
 }
 
@@ -111,7 +111,7 @@ data_XBXT <- function (data, pre_computed, cov, nonlinear, df, time, pop.haz, re
   
   dm <- design_matrix(data = data, N = pre_computed$N, cov = cov, spl = spl)
   
-  list(N = pre_computed$N, N_obs = pre_computed$N_obs, M = dm$M, M_spl = (length(nonlinear) * df), df = df, obs = pre_computed$observed, time = data[[time]], pop_haz = data[[pop.haz]], X = dm$X, N_reg = adj_info$N_reg, N_edges = adj_info$N_edges, node1 = adj_info$node1, node2 = adj_info$node2, region = as.integer(data[[region]]), scaling_factor = adj_info$scaling_factor)
+  list(N = pre_computed$N, N_obs = pre_computed$N_obs, M = dm$M, M_spl = (length(nonlinear) * df), df = df, obs = pre_computed$observed, time = data[[time]], pop_haz = data[[pop.haz]], X = dm$X, N_reg = adj_info$N_reg, N_edges = adj_info$N_edges, node1 = adj_info$node1, node2 = adj_info$node2, region = as.integer(data[[region]]))
   
 }
 
@@ -119,7 +119,7 @@ data_AASS <- function (data, pre_computed, cov, time, pop.haz, region, adj_info,
   
   dm <- design_matrix(data = data, N = pre_computed$N, cov = cov)
   
-  list(N = pre_computed$N, N_obs = pre_computed$N_obs, M = dm$M, obs = pre_computed$observed, time = data[[time]], pop_haz = data[[pop.haz]], X = dm$X, N_reg = adj_info$N_reg, N_edges = adj_info$N_edges, node1 = adj_info$node1, node2 = adj_info$node2, region = as.integer(data[[region]]), scaling_factor = adj_info$scaling_factor)
+  list(N = pre_computed$N, N_obs = pre_computed$N_obs, M = dm$M, obs = pre_computed$observed, time = data[[time]], pop_haz = data[[pop.haz]], X = dm$X, N_reg = adj_info$N_reg, N_edges = adj_info$N_edges, node1 = adj_info$node1, node2 = adj_info$node2, region = as.integer(data[[region]]))
   
 }
 

@@ -26,16 +26,3 @@ r$time_taken
 # Bayes Factor
 bridge <- bridge_sampler(samples = r$fit, cores = getOption(x = "mc.cores", default = detectCores()), silent = T)
 saveRDS(object = bridge, file = paste("FITTED_MODELS/", dist, "/bridge_", model, ".rds", sep = ""))
-
-
-pairs(x = r$fit, pars = c("log_lik", "energy__", "lp__", "v", "v_tilde", "u", "u_tilde"), include = F)
-# traceplot(object = r$fit, pars = c("log_lik", "energy__", "lp__", "v", "v_tilde", "u", "u_tilde"), include = F)
-
-
-
-
-
-
-
-adj.matrix = sparseMatrix(i = adj_info$node1, j = adj_info$node2, x = 1, symmetric = TRUE)
-
