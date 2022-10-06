@@ -13,6 +13,8 @@ fit_stan <- function (data, model, chains = 4, iter = 4e3, warmup = 2e3, adapt_d
   if (model == "AADD" | model == "BBCC" | model == "BBDD") { model <- "AACC" }
   if (model == "ABTT") { model <- "ABSS" }
   if (model == "AATT" | model == "BBSS" | model == "BBTT") { model <- "AASS" }
+  if (model == "ABZZ") { model <- "ABYY" }
+  if (model == "AAZZ" | model == "BBYY" | model == "BBZZ") { model <- "AAYY" }
   if (model == "BBXX") { model <- "AAXX" }
   
   chains <- chains

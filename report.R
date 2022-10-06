@@ -1,6 +1,6 @@
 source("header.R")
 
-model <- "GAMABXX"
+model <- "LL_ABST"
 dist <- gsub(pattern = "_", replacement = "", x = substring(text = model, first = c(1, 4), last = c(3, 7))[1])
 
 r <- readRDS(file = paste("FITTED_MODELS/", dist, "/", model, ".rds", sep = ""))
@@ -8,12 +8,13 @@ fit <- r$fit
 
 # Visualization
 
-print(fit, pars = c("log_lik", "u", "u_tilde", "v", "v_tilde"), include = F)
+print(fit, pars = c("log_lik", "u_tilde", "u", "v_tilde", "v", "convolved_re", "convolved_re_tilde"), include = F)
 print(fit, pars = c("log_lik"), include = F)
-pairs(x = fit, pars = c("log_lik", "energy__", "lp__", "v", "v_tilde", "u", "u_tilde"), include = F)
-traceplot(object = fit, pars = c("log_lik", "energy__", "lp__", "v", "v_tilde", "u", "u_tilde"), include = F)
+pairs(x = fit, pars = c("log_lik", "energy__", "lp__", "v", "v_tilde", "u", "u_tilde", "convolved_re", "convolved_re_tilde"), include = F)
+traceplot(object = fit, pars = c("log_lik", "energy__", "lp__", "v", "v_tilde", "u", "u_tilde", "convolved_re", "convolved_re_tilde"), include = F)
 
 # Model comparison
+## LOOCV
 
 models <- c("LN_ABCD", "LN_ABST", "LL_ABCD", "LL_ABST")
 distributions <- sapply(X = models, FUN = function (x) { gsub(pattern = "_", replacement = "", x = substring(text = x, first = c(1, 4), last = c(3, 7))[1]) })
@@ -26,10 +27,20 @@ for (i in 1:length(models)) {
   temp <- readRDS(file = paste("FITTED_MODELS/", distributions[i], "/", models[i], ".rds", sep = ""))
   fits[[i]] <- temp$fit
   loos[[i]] <- compute_loo(fit = fits[[i]])
-  # I can also include the Bayes Factor, but I have to save the "bridge_sampler()" object when fitting the model. See commit #36
 }
 
 loo_compare(loos) # Refitting the model for the outliers, or relying only on the Bayes Factor
+
+## Bayes Factor
+
+bridges <- list()
+
+for (i in 1:length(models)) {
+  print(i)
+  bridges[[i]] <- readRDS(file = paste("FITTED_MODELS/", distributions[i], "/bridge_", models[i], ".rds", sep = ""))
+}
+bayes_factor(x1 = bridges[[1]], x2 = bridges[[2]])
+bayes_factor(x1 = bridges[[2]], x2 = bridges[[3]])
 
 # Result processing
 
@@ -44,7 +55,7 @@ age <- 40 + time
 age <- (age - mu_age) / sd_age
 
 X_tilde <- matrix(data = c(age), ncol = 1, byrow = F) 
-X <- matrix(data = c(age, rep(1, length(time)), rep(0.5, length(time)), rep(1.2, length(time))), ncol = 4, byrow = F) 
+X <- matrix(data = c(age, rep(0.5, length(time)), rep(1, length(time)), rep(1.2, length(time))), ncol = 4, byrow = F) 
 
 res <- result_processing(fit = fit, model = model, time = time, X_tilde = X_tilde, X = X)
 

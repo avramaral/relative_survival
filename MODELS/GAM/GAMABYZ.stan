@@ -15,15 +15,18 @@ data {
   
   int<lower = 0> N_reg;
   int<lower = 0> N_edges;
-  int<lower = 1, upper = N_reg> node1[N_edges];
+  int<lower = 1, upper = N_reg> node1[N_edges]; 
   int<lower = 1, upper = N_reg> node2[N_edges];
-  int<lower = 1, upper = N_reg> region[N]; 
+  int<lower = 1, upper = N_reg> region[N];
+  
+  real<lower = 0> scaling_factor;
 }
 
 transformed data {
   vector[N] ind_obs;
   ind_obs = rep_vector(0.0, N);
   ind_obs[obs] = rep_vector(1.0, N_obs);
+  
   
   int<lower = 0> N_spl;
   N_spl = M_spl %/% df;
@@ -43,28 +46,42 @@ parameters {
   vector[M_tilde] alpha;
   vector[M] beta;
   
-  real mu;
-  real<lower = 0> sigma;
-
+  real<lower = 0> eta;
+  real<lower = 0> nu;
+  
+  real<lower = 0, upper = 1> rho_tilde;
+  real<lower = 0, upper = 1> rho;
+  
+  vector[N_reg] v_tilde;
+  vector[N_reg] v;
+  
+  vector[N_reg] u_tilde;
   vector[N_reg] u;
   
-  real<lower = 0> tau_u;
+  real<lower = 0> sigma_re_tilde;
+  real<lower = 0> sigma_re;
   
   vector<lower = 0>[N_spl] sigma_B;
 }
 
 transformed parameters {
+  vector[N_reg] convolved_re_tilde;
+  vector[N_reg] convolved_re;
+  
   vector[N] lp_tilde;
   vector[N] lp;
-  
+
   vector[N] excessHaz;
   vector[N] cumExcessHaz;
   
-  lp_tilde = linear_predictor_re(N, X_tilde, alpha, region, u);
-  lp = linear_predictor_re(N, X, beta, region, u);
+  convolved_re_tilde = (sqrt(1 - rho_tilde) * v_tilde + sqrt(rho_tilde / scaling_factor) * u_tilde) *  sigma_re_tilde;
+  convolved_re = (sqrt(1 - rho) * v + sqrt(rho / scaling_factor) * u) * sigma_re;
   
-  excessHaz = hazLL(N, time .* exp(lp_tilde), mu, sigma, 0) .* exp(lp);
-  cumExcessHaz = cumHazLL(N, time .* exp(lp_tilde), mu, sigma) .* exp(lp - lp_tilde);
+  lp_tilde = linear_predictor_re(N, X_tilde, alpha, region, convolved_re_tilde);
+  lp = linear_predictor_re(N, X, beta, region, convolved_re);
+  
+  excessHaz = hazGAM(N, time .* exp(lp_tilde), eta, nu, 0) .* exp(lp);
+  cumExcessHaz = cumHazGAM(N, time .* exp(lp_tilde), eta, nu) .* exp(lp - lp_tilde);
 }
 
 model {
@@ -78,13 +95,14 @@ model {
   // Prior distributions
   // -------------------
   
+  
   // Non-linear fixed coefficients
   if (N_spl != 0) {
     for (i in 1:N_spl) {
       target += multi_normal_lpdf(beta[((i - 1) * df + 1):(i * df)] | rep_vector(0.0, df), pow(sigma_B[i], 2) * B[i]);
     }
   }
-
+  
   // Linear Fixed coefficients
   for (i in 1:M_tilde) { 
     target += normal_lpdf(alpha[i] | 0, 10); 
@@ -94,18 +112,24 @@ model {
     target += normal_lpdf(beta[i] | 0, 10); 
   }
   
-  // LL location parameters
-  target += normal_lpdf(mu | 0, 10); 
+  // GAM scale parameters
+  target += cauchy_lpdf(eta | 0, 1); 
   
-  // LL scale parameters
-  target += cauchy_lpdf(sigma | 0, 1); 
+  // GAM shape parameters
+  target += cauchy_lpdf(nu | 0, 1);
   
   // Random effects
-  target += icar_normal_lpdf(u | tau_u, N_reg, node1, node2);
+  target += icar_normal_1_lpdf(u_tilde | N_reg, node1, node2);
+  target += icar_normal_1_lpdf(u | N_reg, node1, node2);
+  target += normal_lpdf(v_tilde | 0, 1);
+  target += normal_lpdf(v | 0, 1);
   
   // Hyperpriors
-  target += gamma_lpdf(tau_u | 1, 1);  
-
+  target += normal_lpdf(sigma_re_tilde | 0, 1);
+  target += normal_lpdf(sigma_re | 0, 1);
+  target += beta_lpdf(rho_tilde | 0.5, 0.5);
+  target += beta_lpdf(rho | 0.5, 0.5);
+  
   if (N_spl != 0) {
     for (i in 1:N_spl) {
       target += cauchy_lpdf(sigma_B[i] | 0, 1);

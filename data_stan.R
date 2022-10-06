@@ -6,18 +6,18 @@ data_stan <- function(data, model, cov.tilde = c(), cov = c(), nonlinear = c(), 
   
   model <- substring(text = model, first = c(1, 4), last = c(3, 7))[2]
   
-  if (model %in% c("ABST", "ABXT", "ABSS", "ABTT", "XBXT", "AASS", "AATT", "BBSS", "BBTT") & length(adj_info) == 0) {
+  if (model %in% c("ABST", "ABXT", "ABSS", "ABTT", "XBXT", "AASS", "AATT", "BBSS", "BBTT", "ABYZ", "ABXZ", "ABYY", "ABZZ", "XBXZ", "AAYY", "AAZZ", "BBYY", "BBZZ") & length(adj_info) == 0) {
     stop("Please, provide 'adj_info'.")
   }
   
-  if (model %in% c("AACC", "AADD", "BBCC", "BBDD", "AASS", "AATT", "BBSS", "BBTT", "AAXX", "BBXX", "AXXX")) {
+  if (model %in% c("AACC", "AADD", "BBCC", "BBDD", "AASS", "AATT", "BBSS", "BBTT", "AAYY", "AAZZ", "BBYY", "BBZZ", "AAXX", "BBXX", "AXXX")) {
     if (!length(nonlinear) == 0) {
       stop("You cannot include non-linear effects for this model.")
     }
     m <- substring(text = model, first = c(1, 2), last = c(1, 4))[1]
     if (m == "A") {
       cov <- cov.tilde
-    }
+    } 
   }
   
   # Pre-computed quantities
@@ -46,6 +46,16 @@ data_stan <- function(data, model, cov.tilde = c(), cov = c(), nonlinear = c(), 
     d <- data_XBXT(data = data, pre_computed = pre_computed,                        cov = cov, nonlinear = nonlinear, df = df, time = time, pop.haz = pop.haz, region = region, adj_info  = adj_info)
   } else if (model == "AASS" | model == "AATT" | model == "BBSS" | model == "BBTT") {
     d <- data_AASS(data = data, pre_computed = pre_computed,                        cov = cov,                                 time = time, pop.haz = pop.haz, region = region, adj_info  = adj_info)
+  } else if (model == "ABYZ") {
+    d <- data_ABYZ(data = data, pre_computed = pre_computed, cov.tilde = cov.tilde, cov = cov, nonlinear = nonlinear, df = df, time = time, pop.haz = pop.haz, region = region, adj_info  = adj_info)
+  } else if (model == "ABXZ") {
+    d <- data_ABXZ(data = data, pre_computed = pre_computed, cov.tilde = cov.tilde, cov = cov, nonlinear = nonlinear, df = df, time = time, pop.haz = pop.haz, region = region, adj_info  = adj_info)
+  } else if (model == "ABYY" | model == "ABZZ") {
+    d <- data_ABYY(data = data, pre_computed = pre_computed, cov.tilde = cov.tilde, cov = cov, nonlinear = nonlinear, df = df, time = time, pop.haz = pop.haz, region = region, adj_info  = adj_info)
+  } else if (model == "XBXZ") {
+    d <- data_XBXZ(data = data, pre_computed = pre_computed,                        cov = cov, nonlinear = nonlinear, df = df, time = time, pop.haz = pop.haz, region = region, adj_info  = adj_info)
+  } else if (model == "AAYY" | model == "AAZZ" | model == "BBYY" | model == "BBZZ") {
+    d <- data_AAYY(data = data, pre_computed = pre_computed,                        cov = cov,                                 time = time, pop.haz = pop.haz, region = region, adj_info  = adj_info)
   } else if (model == "ABXX") {
     d <- data_ABXX(data = data, pre_computed = pre_computed, cov.tilde = cov.tilde, cov = cov, nonlinear = nonlinear, df = df, time = time, pop.haz = pop.haz)
   } else if (model == "XBXX") {
@@ -120,6 +130,38 @@ data_AASS <- function (data, pre_computed, cov, time, pop.haz, region, adj_info,
   dm <- design_matrix(data = data, N = pre_computed$N, cov = cov)
   
   list(N = pre_computed$N, N_obs = pre_computed$N_obs, M = dm$M, obs = pre_computed$observed, time = data[[time]], pop_haz = data[[pop.haz]], X = dm$X, N_reg = adj_info$N_reg, N_edges = adj_info$N_edges, node1 = adj_info$node1, node2 = adj_info$node2, region = as.integer(data[[region]]))
+  
+}
+
+data_ABYZ <- function (data, pre_computed, cov.tilde, cov, nonlinear, df, time, pop.haz, region, adj_info, ...) {
+  
+  spl <- matrix_spline(data = data, nonlinear = nonlinear, df = df)
+  
+  dm_tilde <- design_matrix(data = data, N = pre_computed$N, cov = cov.tilde)
+  dm <- design_matrix(data = data, N = pre_computed$N, cov = cov, spl = spl)
+  
+  list(N = pre_computed$N, N_obs = pre_computed$N_obs, M_tilde = dm_tilde$M, M = dm$M, M_spl = (length(nonlinear) * df), df = df, obs = pre_computed$observed, time = data[[time]], pop_haz = data[[pop.haz]], X_tilde = dm_tilde$X, X = dm$X, N_reg = adj_info$N_reg, N_edges = adj_info$N_edges, node1 = adj_info$node1, node2 = adj_info$node2, region = as.integer(data[[region]]), scaling_factor = adj_info$scaling_factor)
+  
+}
+
+data_ABXZ <- data_ABYZ
+data_ABYY <- data_ABYZ
+
+data_XBXZ <- function (data, pre_computed, cov, nonlinear, df, time, pop.haz, region, adj_info, ...) {
+  
+  spl <- matrix_spline(data = data, nonlinear = nonlinear, df = df)
+  
+  dm <- design_matrix(data = data, N = pre_computed$N, cov = cov, spl = spl)
+  
+  list(N = pre_computed$N, N_obs = pre_computed$N_obs, M = dm$M, M_spl = (length(nonlinear) * df), df = df, obs = pre_computed$observed, time = data[[time]], pop_haz = data[[pop.haz]], X = dm$X, N_reg = adj_info$N_reg, N_edges = adj_info$N_edges, node1 = adj_info$node1, node2 = adj_info$node2, region = as.integer(data[[region]]), scaling_factor = adj_info$scaling_factor)
+  
+}
+
+data_AAYY <- function (data, pre_computed, cov, time, pop.haz, region, adj_info, ...) {
+  
+  dm <- design_matrix(data = data, N = pre_computed$N, cov = cov)
+  
+  list(N = pre_computed$N, N_obs = pre_computed$N_obs, M = dm$M, obs = pre_computed$observed, time = data[[time]], pop_haz = data[[pop.haz]], X = dm$X, N_reg = adj_info$N_reg, N_edges = adj_info$N_edges, node1 = adj_info$node1, node2 = adj_info$node2, region = as.integer(data[[region]]), scaling_factor = adj_info$scaling_factor)
   
 }
 

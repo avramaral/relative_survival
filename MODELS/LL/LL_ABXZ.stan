@@ -17,14 +17,16 @@ data {
   int<lower = 0> N_edges;
   int<lower = 1, upper = N_reg> node1[N_edges];
   int<lower = 1, upper = N_reg> node2[N_edges];
-  int<lower = 1, upper = N_reg> region[N]; 
+  int<lower = 1, upper = N_reg> region[N];
+  
+  real<lower = 0> scaling_factor;
 }
 
 transformed data {
   vector[N] ind_obs;
   ind_obs = rep_vector(0.0, N);
   ind_obs[obs] = rep_vector(1.0, N_obs);
-  
+
   int<lower = 0> N_spl;
   N_spl = M_spl %/% df;
   
@@ -45,23 +47,31 @@ parameters {
   
   real mu;
   real<lower = 0> sigma;
+  
+  real<lower = 0, upper = 1> rho;
 
+  vector[N_reg] v;
+  
   vector[N_reg] u;
   
-  real<lower = 0> tau_u;
-  
+  real<lower = 0> sigma_re;
+
   vector<lower = 0>[N_spl] sigma_B;
 }
 
 transformed parameters {
+  vector[N_reg] convolved_re;
+  
   vector[N] lp_tilde;
   vector[N] lp;
   
   vector[N] excessHaz;
   vector[N] cumExcessHaz;
   
-  lp_tilde = linear_predictor_re(N, X_tilde, alpha, region, u);
-  lp = linear_predictor_re(N, X, beta, region, u);
+  convolved_re = (sqrt(1 - rho) * v + sqrt(rho / scaling_factor) * u) * sigma_re;
+  
+  lp_tilde = linear_predictor(N, X_tilde, alpha);
+  lp = linear_predictor_re(N, X, beta, region, convolved_re);
   
   excessHaz = hazLL(N, time .* exp(lp_tilde), mu, sigma, 0) .* exp(lp);
   cumExcessHaz = cumHazLL(N, time .* exp(lp_tilde), mu, sigma) .* exp(lp - lp_tilde);
@@ -71,7 +81,7 @@ model {
   // --------------
   // Log-likelihood
   // --------------
-  
+
   target += sum(log(pop_haz[obs] + excessHaz[obs])) - sum(cumExcessHaz);
   
   // -------------------
@@ -95,17 +105,19 @@ model {
   }
   
   // LL location parameters
-  target += normal_lpdf(mu | 0, 10); 
+  target += normal_lpdf(mu | 0, 10);  
   
   // LL scale parameters
   target += cauchy_lpdf(sigma | 0, 1); 
   
   // Random effects
-  target += icar_normal_lpdf(u | tau_u, N_reg, node1, node2);
+  target += icar_normal_1_lpdf(u | N_reg, node1, node2);
+  target += normal_lpdf(v | 0, 1);
   
   // Hyperpriors
-  target += gamma_lpdf(tau_u | 1, 1);  
-
+  target += normal_lpdf(sigma_re | 0, 1);
+  target += beta_lpdf(rho | 0.5, 0.5);
+  
   if (N_spl != 0) {
     for (i in 1:N_spl) {
       target += cauchy_lpdf(sigma_B[i] | 0, 1);

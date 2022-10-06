@@ -114,12 +114,15 @@ add_re <- function (fitted_data, model, lp, lp_tilde, i, j, ...) {
   } else if (model %in% c("ABST", "ABXT", "ABSS", "ABTT", "XBXT", "AASS", "AATT", "BBSS", "BBTT")) {
     re_tilde <- ifelse(test = is.null(fitted_data$u_tilde[i, j]), yes = 0, no = fitted_data$u_tilde[i, j])
     re       <- ifelse(test = is.null(fitted_data$u[i, j]),       yes = 0, no = fitted_data$u[i, j])
+  } else if (model %in% c("ABYZ", "ABXZ", "ABYY", "ABZZ", "XBXZ", "AAYY", "AAZZ", "BBYY", "BBZZ")) {
+    re_tilde <- ifelse(test = is.null(fitted_data$convolved_re_tilde[i, j]), yes = 0, no = fitted_data$convolved_re_tilde[i, j])
+    re       <- ifelse(test = is.null(fitted_data$convolved_re[i, j]),       yes = 0, no = fitted_data$convolved_re[i, j])
   } else {
     re_tilde <- 0
     re       <- 0
   }
   
-  if (model %in% c("ABCC", "ABDD", "AACC", "AADD", "BBCC", "BBDD", "ABSS", "ABTT", "AASS", "AATT", "BBSS", "BBTT")) {
+  if (model %in% c("ABCC", "ABDD", "AACC", "AADD", "BBCC", "BBDD", "ABSS", "ABTT", "AASS", "AATT", "BBSS", "BBTT", "ABYY", "ABZZ", "AAYY", "AAZZ", "BBYY", "BBZZ")) {
     lp_re_tilde <- add_re_aux(lp = lp_tilde, random_effect = re)
     lp_re       <- add_re_aux(lp = lp, random_effect = re)
   } else {

@@ -11,9 +11,11 @@ data {
   
   int<lower = 0> N_reg;
   int<lower = 0> N_edges;
-  int<lower = 1, upper = N_reg> node1[N_edges]; 
+  int<lower = 1, upper = N_reg> node1[N_edges];
   int<lower = 1, upper = N_reg> node2[N_edges];
-  int<lower = 1, upper = N_reg> region[N]; 
+  int<lower = 1, upper = N_reg> region[N];
+  
+  real<lower = 0> scaling_factor;
 }
 
 transformed data {
@@ -25,31 +27,39 @@ transformed data {
 parameters {
   vector[M] beta;
   
-  real<lower = 0> eta;
-  real<lower = 0> nu;
+  real mu;
+  real<lower = 0> sigma;
+  
+  real<lower = 0, upper = 1> rho;
 
+  vector[N_reg] v;
+  
   vector[N_reg] u;
   
-  real<lower = 0> tau_u;
+  real<lower = 0> sigma_re;
 }
 
 transformed parameters {
+  vector[N_reg] convolved_re;
+  
   vector[N] lp;
   
   vector[N] excessHaz;
   vector[N] cumExcessHaz;
   
-  lp = linear_predictor_re(N, X, beta, region, u);
+  convolved_re = (sqrt(1 - rho) * v + sqrt(rho / scaling_factor) * u) * sigma_re;
   
-  excessHaz = hazGAM(N, time .* exp(lp), eta, nu, 0) .* exp(lp);
-  cumExcessHaz = cumHazGAM(N, time .* exp(lp), eta, nu);
+  lp = linear_predictor_re(N, X, beta, region, convolved_re);
+  
+  excessHaz = hazLL(N, time .* exp(lp), mu, sigma, 0) .* exp(lp);
+  cumExcessHaz = cumHazLL(N, time .* exp(lp), mu, sigma);
 }
 
 model {
   // --------------
   // Log-likelihood
   // --------------
-  
+
   target += sum(log(pop_haz[obs] + excessHaz[obs])) - sum(cumExcessHaz);
   
   // -------------------
@@ -61,17 +71,19 @@ model {
     target += normal_lpdf(beta[i] | 0, 10); 
   }
   
-  // GAM scale parameters
-  target += cauchy_lpdf(eta | 0, 1); 
+  // LL location parameters
+  target += normal_lpdf(mu | 0, 10);  
   
-  // GAM shape parameters
-  target += cauchy_lpdf(nu | 0, 1);
+  // LL scale parameters
+  target += cauchy_lpdf(sigma | 0, 1); 
   
   // Random effects
-  target += icar_normal_lpdf(u | tau_u, N_reg, node1, node2);
+  target += icar_normal_1_lpdf(u | N_reg, node1, node2);
+  target += normal_lpdf(v | 0, 1);
   
   // Hyperpriors
-  target += gamma_lpdf(tau_u | 1, 1);
+  target += normal_lpdf(sigma_re | 0, 1);
+  target += beta_lpdf(rho | 0.5, 0.5);
   
 }
 

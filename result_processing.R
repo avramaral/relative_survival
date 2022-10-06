@@ -23,7 +23,7 @@ result_processing <- function (fit, model, time, X_tilde = matrix(data = NA, nro
   dist  <- gsub(pattern = "_", replacement = "", x = name[1])
   model <- name[2]
   
-  spatial <- ifelse(test = as.logical(sum(str_detect(string = model, pattern = c("C", "D", "S", "T")))), yes = T, no = F)
+  spatial <- ifelse(test = as.logical(sum(str_detect(string = model, pattern = c("C", "D", "S", "T", "Y", "Z")))), yes = T, no = F)
   
   if (!spatial) {
     N_reg <- 1

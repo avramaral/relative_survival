@@ -8,20 +8,20 @@ data$wbc <- scale(data$wbc)
 data$dep <- scale(data$dep)
 
 map <- readRDS(file = "DATA/nwengland_map.rds")
-adj_info <- adj_list(map = map)
+adj_info <- adj_list(map = map, sf = T)
 
-model <- "LN_XXXX"
+model <- "PGWAAYY"
 dist <- gsub(pattern = "_", replacement = "", x = substring(text = model, first = c(1, 4), last = c(3, 7))[1])
 
 d <- data_stan(data = data, model = model, cov.tilde = c("age"), cov = c("age", "wbc", "sex", "dep"), nonlinear = c(), adj_info = adj_info)
-r <- fit_stan(data = d, model = model)
+r <- fit_stan(data = d, model = model, max_treedepth = 10)
 
-print(r$fit, pars = c("log_lik", "u", "u_tilde", "v_tilde", "v"), include = F)
+print(r$fit, pars = c("log_lik", "u_tilde", "u", "v_tilde", "v"), include = F)
 # pairs(x = r$fit, pars = c("log_lik", "energy__", "lp__", "v", "v_tilde", "u", "u_tilde"), include = F)
 # traceplot(object = r$fit, pars = c("log_lik", "energy__", "lp__", "v", "v_tilde", "u", "u_tilde"), include = F)
 
-saveRDS(object = r, file = paste("FITTED_MODELS/", dist, "/", model, ".rds", sep = ""))
 r$time_taken
+saveRDS(object = r, file = paste("FITTED_MODELS/", dist, "/", model, ".rds", sep = ""))
 
 # Bayes Factor
 bridge <- bridge_sampler(samples = r$fit, cores = getOption(x = "mc.cores", default = detectCores()), silent = T)

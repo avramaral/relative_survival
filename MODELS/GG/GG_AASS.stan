@@ -30,6 +30,8 @@ parameters {
   real<lower = 0> theta;
 
   vector[N_reg] u;
+  
+  real<lower = 0> tau_u;
 }
 
 transformed parameters {
@@ -68,7 +70,10 @@ model {
   target += gamma_lpdf(theta | 0.65, 1 / 1.83); 
   
   // Random effects
-  target += icar_normal_lpdf(u | N_reg, node1, node2);
+  target += icar_normal_lpdf(u | tau_u, N_reg, node1, node2);
+  
+  // Hyperpriors
+  target += gamma_lpdf(tau_u | 1, 1);
   
 }
 

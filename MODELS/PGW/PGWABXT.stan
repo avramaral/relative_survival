@@ -49,6 +49,8 @@ parameters {
 
   vector[N_reg] u;
   
+  real<lower = 0> tau_u;
+  
   vector<lower = 0>[N_spl] sigma_B;
 }
 
@@ -101,9 +103,11 @@ model {
   target += gamma_lpdf(theta | 0.65, 1 / 1.83); 
   
   // Random effects
-  target += icar_normal_lpdf(u | N_reg, node1, node2);
+  target += icar_normal_lpdf(u | tau_u, N_reg, node1, node2);
   
   // Hyperpriors
+  target += gamma_lpdf(tau_u | 1, 1);
+  
   if (N_spl != 0) {
     for (i in 1:N_spl) {
       target += cauchy_lpdf(sigma_B[i] | 0, 1);
