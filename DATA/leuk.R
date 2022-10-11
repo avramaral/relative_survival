@@ -10,10 +10,10 @@ time <- LeukSurv$time / 365
 quintiles <- quantile(LeukSurv$tpi, c(0.2, 0.4, 0.6, 0.8))
 
 for (i in 1:n) {
-  if(LeukSurv$tpi[i] <= quintiles[1]) {
-  LeukSurv$tpi_transf[i] <- 1 } else if(quintiles[1] < LeukSurv$tpi[i] & LeukSurv$tpi[i] <= quintiles[2]) {
-  LeukSurv$tpi_transf[i] <- 2 } else if(quintiles[2] < LeukSurv$tpi[i] & LeukSurv$tpi[i] <= quintiles[3]) {
-  LeukSurv$tpi_transf[i] <- 3 } else if(quintiles[3] < LeukSurv$tpi[i] & LeukSurv$tpi[i] <= quintiles[4]) {
+  if (LeukSurv$tpi[i] <= quintiles[1]) {
+  LeukSurv$tpi_transf[i] <- 1 } else if (quintiles[1] < LeukSurv$tpi[i] & LeukSurv$tpi[i] <= quintiles[2]) {
+  LeukSurv$tpi_transf[i] <- 2 } else if (quintiles[2] < LeukSurv$tpi[i] & LeukSurv$tpi[i] <= quintiles[3]) {
+  LeukSurv$tpi_transf[i] <- 3 } else if (quintiles[3] < LeukSurv$tpi[i] & LeukSurv$tpi[i] <= quintiles[4]) {
   LeukSurv$tpi_transf[i] <- 4 } else {
   LeukSurv$tpi_transf[i] <- 5 }
 }

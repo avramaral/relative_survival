@@ -22,6 +22,11 @@ cumHazPGW <- function (N, time, eta, nu, theta, ...) {
   res
 }
 
+# Quantile Function PGW
+qPGW <- function (p, eta, nu, theta, ...) {
+  (eta * (((1 - log(1 - p)) ^ theta) - 1) ^ (1 / nu))
+}
+
 ### Log Normal (LN)
 
 # Hazard Function LN
@@ -44,6 +49,11 @@ cumHazLN <- function (N, time, mu, sigma, ...) {
     res <- c(res, - plnorm(time[i], mu, sigma, lower.tail = F, log.p = T))
   }
   res
+}
+
+# Quantile Function LN
+qLN <- function (p, mu, sigma, ...) {
+  qlnorm(p = p, meanlog = mu, sdlog = sigma)
 }
 
 ### Log Logistic (LL)
@@ -70,6 +80,12 @@ cumHazLL <- function (N, time, mu, sigma, ...) {
   res
 }
 
+# Quantile Function LL
+qLL <- function (p, mu, sigma, ...) {
+  # exp(qlogis(p = p, location = mu, scale = sigma))
+  exp(mu) * ((p / (1 - p)) ^ sigma)
+}
+
 ### Generalized Gamma (GG)
 
 # Hazard Function GG
@@ -92,6 +108,11 @@ cumHazGG <- function (N, time, eta, nu, theta, ...) {
     res <- c(res, - pgamma(time[i] ^ theta, shape = nu / theta, scale = eta ^ theta, log = T, lower.tail = F))
   }
   res
+}
+
+# Quantile Function GG
+qGG <- function (p, eta, nu, theta, ...) {
+  (qgamma(p = p, shape = nu / theta, scale = eta ^ theta) ^ (1 / theta))
 }
 
 ### Gamma (GAM)
@@ -117,3 +138,8 @@ cumHazGAM <- function (N, time, eta, nu, ...) {
   }
   res
 }
+
+# Quantile Function GAM
+qGAM <- function (p, eta, nu, ...) {
+  qgamma(p = p, shape = nu, scale = eta)
+} 

@@ -1,6 +1,6 @@
 source("header.R")
 
-model <- "LL_ABST"
+model <- "LN_ABST"
 dist <- gsub(pattern = "_", replacement = "", x = substring(text = model, first = c(1, 4), last = c(3, 7))[1])
 
 r <- readRDS(file = paste("FITTED_MODELS/", dist, "/", model, ".rds", sep = ""))
