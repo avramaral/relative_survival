@@ -33,7 +33,7 @@ W <- rbind(c(0, 1, 1, 0, 0, 0, 0, 0, 0),
 
 adj_info <- adj_list_simplified(W)
 
-model <- "LN_ABCD"
+model <- "LN_ABST"
 dist <- gsub(pattern = "_", replacement = "", x = substring(text = model, first = c(1, 4), last = c(3, 7))[1])
 
 m <- compile_model(model = model)
@@ -150,14 +150,15 @@ for (i in 1:N_reg) {
 # As in https://stackoverflow.com/questions/4954507/calculate-the-area-under-a-curve
 
 diff_areas <- c()
+
+id <- order(time)
 for (i in 1:N_reg) {
   # real <- true_excHaz_val$meanCurves[, i]
   # esti <- excHazSummary[[i]]$M[id]  
   
   real <- true_netSur_val$meanCurves[, i]
   esti <- netSurSummary[[i]]$M[id]
-    
-  id <- order(time)
+  
   area_real <- sum(diff(time[id]) * rollmean(real, 2))
   area_esti <- sum(diff(time[id]) * rollmean(esti, 2))
   diff_areas <- c(diff_areas, abs(area_real - area_esti))
@@ -174,6 +175,3 @@ summary_obj <- readRDS(file = paste("SIMULATION/FITTED_MODELS/SUMMARY_data_", mo
 #   lines(time, esti[, i], col = i, lty = 2)
 # }
 # legend(x = "topright", inset = 0.01, legend = c("True Curves", "Estimated Curves"), col = c(1, 1), lty = c(1, 2), box.lty = 0)
-
-
-

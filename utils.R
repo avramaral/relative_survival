@@ -9,6 +9,8 @@ adj_list <- function(map, sf = FALSE, ...) {
   adj <- poly2nb(pl = map)
   adj <- nb2mat(neighbours = adj, style = "B")
   N_reg <- nrow(adj)
+  rownames(adj) <- 1:N_reg
+  colnames(adj) <- 1:N_reg
   
   nodes <- adj_quantities(adj, as.numeric(rownames(adj)))
   node1 <- nodes$node1
