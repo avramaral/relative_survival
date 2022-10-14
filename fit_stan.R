@@ -1,5 +1,5 @@
-fit_stan <- function (data, model, chains = 4, iter = 4e3, warmup = 2e3, adapt_delta = 0.8, max_treedepth = 10, ...) {
-
+compile_model <- function (model) {
+  
   if (!validate_model(model = model)) {
     stop("Select a valid model.")
   }
@@ -17,25 +17,31 @@ fit_stan <- function (data, model, chains = 4, iter = 4e3, warmup = 2e3, adapt_d
   if (model == "AAZZ" | model == "BBYY" | model == "BBZZ") { model <- "AAYY" }
   if (model == "BBXX") { model <- "AAXX" }
   
+  mod <- stan_model(file = paste("MODELS/", gsub(pattern = "_", replacement = "", x = dist), "/", dist, model, ".stan", sep = ""))
+  list(model = original_model, mod = mod)
+}
+
+fit_stan <- function (mod, data, chains = 4, iter = 4e3, warmup = 2e3, adapt_delta = 0.8, max_treedepth = 10, ...) {
+
   chains <- chains
   iter <- iter
   warmup <- warmup
   
   start_time <- Sys.time()
   
-  fit <- stan(file = paste("MODELS/", gsub(pattern = "_", replacement = "", x = dist), "/", dist, model, ".stan", sep = ""),
-              data = data,
-              chains = chains,
-              iter = iter,
-              warmup = warmup,
-              pars = c("lp_tilde", "lp", "excessHaz", "cumExcessHaz"),
-              include = F,
-              control = list(adapt_delta = adapt_delta, max_treedepth = max_treedepth),
-              cores = getOption(x = "mc.cores", default = detectCores()))
+  fit <- sampling(object = mod$mod,
+                  data = data,
+                  chains = chains,
+                  iter = iter,
+                  warmup = warmup,
+                  pars = c("lp_tilde", "lp", "excessHaz", "cumExcessHaz"),
+                  include = F,
+                  control = list(adapt_delta = adapt_delta, max_treedepth = max_treedepth),
+                  cores = getOption(x = "mc.cores", default = detectCores()))
   
   end_time <- Sys.time()
   time_taken <- end_time - start_time
   
-  list(model = original_model, chains = chains, iter = iter, warmup = warmup, adapt_delta = adapt_delta, max_treedepth = max_treedepth, fit = fit, time_taken = time_taken)
+  list(model = mod$model, chains = chains, iter = iter, warmup = warmup, adapt_delta = adapt_delta, max_treedepth = max_treedepth, fit = fit, time_taken = time_taken)
 }
 

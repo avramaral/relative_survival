@@ -93,3 +93,70 @@ result_processing <- function (fit, model, time, X_tilde = matrix(data = NA, nro
   
   list(excHaz = excHaz, excCumHaz = excCumHaz, netSur = netSur)
 }
+
+true_result_processing <- function (alpha, beta, re_tilde, re, model, pars, time, X_tilde = matrix(data = NA, nrow = length(time), ncol = 0), X = matrix(data = NA, nrow = length(time), ncol = 0), verbose = T, ...) {
+
+  fix_coeff <- substring(text = model, first = c(4, 5), last = c(4, 5))
+  
+  m_tilde <- length(alpha)
+  m <- length(beta)
+  
+  if ((ncol(X_tilde) != m_tilde) | (ncol(X) != m)) {
+    stop("Provide 'X' and 'X_tilde' with correct number of columns.")
+  }
+  
+  name  <- substring(text = model, first = c(1, 4), last = c(3, 7))
+  dist  <- gsub(pattern = "_", replacement = "", x = name[1])
+  model <- name[2]
+  
+  spatial <- ifelse(test = as.logical(sum(str_detect(string = model, pattern = c("C", "D", "S", "T", "Y", "Z")))), yes = T, no = F)
+  
+  if (!spatial) {
+    N_reg <- 1
+  } else {
+    N_reg <- length(re)
+  }
+  
+  N_samples <- 1
+  
+  excHaz    <- array(data = 0, dim = c(length(time), 1, N_reg))
+  excCumHaz <- array(data = 0, dim = c(length(time), 1, N_reg))
+  netSur    <- array(data = 0, dim = c(length(time), 1, N_reg))
+  
+  for (j in 1:N_reg) {
+    
+    if (fix_coeff[1] == fix_coeff[2]) {
+      lp_tilde <- compute_lp(m = m_tilde, X = X_tilde, coeff = beta)
+      lp       <- compute_lp(m = m, X = X, coeff = beta)
+    } else {
+      lp_tilde <- compute_lp(m = m_tilde, X = X_tilde, coeff = alpha)
+      lp       <- compute_lp(m = m, X = X, coeff = beta)
+    }
+    
+    lp_tilde <- add_re_aux(lp = lp_tilde, random_effect = re_tilde[j, 1])
+    lp       <- add_re_aux(lp = lp, random_effect = re[j, 1])
+    
+    if (dist == "PGW") {
+      excHaz[, 1, j]    <- hazPGW(N = length(time), time = time * exp(lp_tilde), eta = pars$eta, nu = pars$nu, theta = pars$theta, log = F) * exp(lp)
+      excCumHaz[, 1, j] <- cumHazPGW(N = length(time), time = time * exp(lp_tilde), eta = pars$eta, nu = pars$nu, theta = pars$theta) * exp(lp - lp_tilde)
+    } else if (dist == "LN") {
+      excHaz[, 1, j]    <- hazLN(N = length(time), time = time * exp(lp_tilde), mu = pars$mu, sigma = pars$sigma, log = F) * exp(lp)
+      excCumHaz[, 1, j] <- cumHazLN(N = length(time), time = time * exp(lp_tilde), mu = pars$mu, sigma = pars$sigma) * exp(lp - lp_tilde)
+    } else if (dist == "LL") {
+      excHaz[, 1, j]    <- hazLL(N = length(time), time = time * exp(lp_tilde), mu = pars$mu, sigma = pars$sigma, log = F) * exp(lp)
+      excCumHaz[, 1, j] <- cumHazLL(N = length(time), time = time * exp(lp_tilde), mu = pars$mu, sigma = pars$sigma) * exp(lp - lp_tilde)
+    } else if (dist == "GG") {
+      excHaz[, 1, j]    <- hazGG(N = length(time), time = time * exp(lp_tilde), eta = pars$eta, nu = pars$nu, theta = pars$theta, log = F) * exp(lp)
+      excCumHaz[, 1, j] <- cumHazGG(N = length(time), time = time * exp(lp_tilde), eta = pars$eta, nu = pars$nu, theta = pars$theta) * exp(lp - lp_tilde)
+    } else if (dist == "GAM") {
+      excHaz[, 1, j]    <- hazGAM(N = length(time), time = time * exp(lp_tilde), eta = pars$eta, nu = pars$nu, log = F) * exp(lp)
+      excCumHaz[, 1, j] <- cumHazGAM(N = length(time), time = time * exp(lp_tilde), eta = pars$eta, nu = pars$nu) * exp(lp - lp_tilde)
+    } else {
+      stop("Choose a valid distribution.")
+    }
+    
+    netSur[, 1, j] <- exp(- excCumHaz[, 1, j])      
+  }
+  
+  list(excHaz = excHaz, excCumHaz = excCumHaz, netSur = netSur)
+}

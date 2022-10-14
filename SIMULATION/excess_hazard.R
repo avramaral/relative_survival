@@ -82,11 +82,11 @@ simulate_re <- function (struc = "ICAR", precision_tilde = 1, precision = 1, Eng
     re_tilde <- rICAR(Q = precision_tilde * (D - W))
     re <- rICAR(Q = precision * (D - W))  
   } else if (struc == "IID") {
-    re_tilde <- rIID(sigma = sqrt(1 / precision), N_regions = nrow(W))
-    re <- rIID(sigma = sqrt(1 / precision), N_regions = nrow(W))
+    re_tilde <- as.matrix(rIID(sigma = sqrt(1 / precision), N_regions = nrow(W)))
+    re <- as.matrix(rIID(sigma = sqrt(1 / precision), N_regions = nrow(W)))
   } else if (struc == "NONE") {
-    re_tilde <- rep(x = 0, times = nrow(W))
-    re <- rep(x = 0, times = nrow(W))
+    re_tilde <- as.matrix(rep(x = 0, times = nrow(W)))
+    re <- as.matrix(rep(x = 0, times = nrow(W)))
   }
   list(re_tilde = re_tilde, re = re)
 }

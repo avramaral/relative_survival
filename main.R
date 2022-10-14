@@ -14,7 +14,8 @@ model <- "LN_ABST"
 dist <- gsub(pattern = "_", replacement = "", x = substring(text = model, first = c(1, 4), last = c(3, 7))[1])
 
 d <- data_stan(data = data, model = model, cov.tilde = c("age"), cov = c("age", "wbc", "sex", "dep"), nonlinear = c(), adj_info = adj_info)
-r <- fit_stan(data = d, model = model, max_treedepth = 12)
+m <- compile_model(model = model)
+r <- fit_stan(mod = m, data = d)
 
 print(r$fit, pars = c("log_lik", "u_tilde", "u", "v_tilde", "v"), include = F)
 # pairs(x = r$fit, pars = c("log_lik", "energy__", "lp__", "v", "v_tilde", "u", "u_tilde"), include = F)
