@@ -17,25 +17,34 @@ LT <- as.data.frame(read.table("DATA/ENGLAND_LT_2010_2015.txt", header = T))
 
 ##################################################
 
-sample_size <- 500
+model_data <- "PGWABST"
+prop <- 50
+dist <- gsub(pattern = "_", replacement = "", x = substring(text = model_data, first = c(1, 4), last = c(3, 7))[1])
+
+sample_size <- 2000
 year_init <- 2010
-year_last <- 2015
+year_last <- 2014
+
+precision_tilde <- 10
+precision <- 10
 
 last_day <- ymd(paste(year_last, "-12-31", sep = ""))
 sample_size <- ifelse(test = (sample_size %% 2 == 0), yes = sample_size, no = sample_size + 1)
-X_fem <- simDesMatrix(seed = 1, n = (sample_size / 2), admin.cens = last_day, scale.age = F, site = "lung", sex = "female")
-X_mal <- simDesMatrix(seed = 1, n = (sample_size / 2), admin.cens = last_day, scale.age = F, site = "lung", sex = "male")
+X_fem <- simDesMatrix(seed = 999, n = (sample_size / 2), admin.cens = last_day, scale.age = F, site = "lung", sex = "female")
+X_mal <- simDesMatrix(seed = 999, n = (sample_size / 2), admin.cens = last_day, scale.age = F, site = "lung", sex = "male")
 fixed_times <- c(seq(from = ymd(paste(year_init, "-01-01", sep = "")), to = ymd(paste(year_last, "-01-01", sep = "")), by = "year"), last_day)
 
 hrates_fem <- compute_hazard_rates(X = X_mal, fixed_times = fixed_times, sex = 1)
-hrates_mal <- compute_hazard_rates(X = X_fem, fixed_times = fixed_times, sex = 2) # Check sex code for LT table
+hrates_mal <- compute_hazard_rates(X = X_fem, fixed_times = fixed_times, sex = 2) 
 
-N_sim <- 100
+N_sim <- 50
 data <- list()
 
 progressbar <- txtProgressBar(min = 1, max = N_sim, initial = 1)
 
 for (k in 1:N_sim) {
+  set.seed(k + 999)
+  
   sim_fem <- sim_pophaz(seed = k + 999, lst = hrates_fem)
   sim_mal <- sim_pophaz(seed = k + 999, lst = hrates_mal)
   
@@ -43,42 +52,72 @@ for (k in 1:N_sim) {
   sim_pop$sim.pop <- c(sim_fem$sim.pop, sim_mal$sim.pop)
   sim_pop$status <- c(sim_fem$status, sim_mal$status)
   
-  # hist(sim_pop$sim.pop)
-  # mean(sim_pop$status)
+  hist(sim_pop$sim.pop)
+  mean(sim_pop$status)
   
   ##################################################
   
-  set.seed(999)
+  if (model_data %in% c("PGWABST", "LN_ABST", "LL_ABST")) {
+    s_re <- simulate_re(struc = "ICAR", precision_tilde = precision_tilde, precision = precision)
+  } else if (model_data %in% c("PGWABCD", "LN_ABCD", "LL_ABCD")) {
+    s_re <- simulate_re(struc = "IID",  precision_tilde = precision_tilde, precision = precision)
+  } else if (model_data %in% c("PGWABXX", "LN_ABXX", "LL_ABXX")) {
+    s_re <- simulate_re(struc = "NONE")
+  }
   
-  s_re <- simulate_re(struc = "ICAR", precision_tilde = 1, precision = 1)
   re_tilde <- s_re$re_tilde
   re <- s_re$re
-
-  set.seed(k + 999)
     
   # Design Matrix
   desMat <- rbind(X_fem, X_mal)
   desMat <- cbind(desMat, sex = c(rep(x = 0, times = nrow(X_fem)), rep(x = 1, times = nrow(X_mal))))
   desMat$dep <- scale(desMat$dep)
   desMat$age <- scale(desMat$age)
+  dep <- c(X_fem$dep, X_mal$dep)
   
   X_tilde <- matrix(data = desMat$age, ncol = 1, byrow = F) 
   X <- matrix(data = c(desMat$age, desMat$sex, desMat$dep), ncol = 3, byrow = F) 
   
-  alpha <- c(3)
-  beta  <- c(2, 4, 1)
+  idxs <- list()
+  for (i in 1:length(unique(desMat$gor))) {
+    idxs[[i]] <- which(desMat$gor == i)
+  }
   
-  # dist <- "LN"
-  # pars <- list(mu = 1, sigma = 1)
-  dist <- "PGW"
-  pars <- list(eta = 2, nu = 2, theta = 2)
+  alphas <- list()
+  betas <- list()
+  
+  for (i in 1:length(unique(dep))) {
+    if (prop == 50) {
+      alphas[[i]] <- c(2)
+      betas[[i]] <-  c(2, - 1, - 2)
+    } else if (prop == 75) {
+      alphas[[i]] <- c(2)
+      betas[[i]] <-  c(2, - 1, - 2)
+    } else {
+      stop("Choose a valid ratio for 'observed / total individuals.'")
+    }
+  }
+  
+  if (dist == "LN") {
+    if (prop == 50) {
+      pars <- list(mu = 1, sigma = 1)
+    } else if (prop == 75) {
+      pars <- list(mu = 0, sigma = 0.1)
+    }
+  } else if (dist == "PGW") {
+    if (prop == 50) {
+      pars <- list(eta = 1.5, nu = 0.75, theta = 1.5) 
+    } else if (prop == 75) {
+      pars <- list(eta = 1, nu = 2, theta = 1) 
+    }
+  }
   
   C_1 <- rep(x = 5, times = nrow(desMat))
   C_2 <- rexp(n = nrow(desMat), rate = 0.01)
   sim_exc <- list()
   sim_exc$sim.exc <- c()
   sim_exc$status <- c()
-  tim_exc <- simulate_RS_MEGH(dist = dist, pars = pars, X_tilde = X_tilde, X = X, alpha = alpha, beta = beta, re_tilde = re_tilde, re = re)
+  tim_exc <- simulate_RS_MEGH(dist = dist, pars = pars, X_tilde = X_tilde, X = X, alphas = alphas, betas = betas, dep = dep, re_tilde = re_tilde, re = re, idxs = idxs)
   for (i in 1:nrow(desMat)) { sim_exc$sim.exc <- c(sim_exc$sim.exc, min(tim_exc[i], C_1[i], C_2[i])) }
   for (i in 1:nrow(desMat)) { sim_exc$status <- c(sim_exc$status, ifelse(test = ((tim_exc[i] < C_1[i]) & (tim_exc[i] < C_2[i])), yes = 1, no = 0)) }
     
@@ -128,6 +167,4 @@ for (k in 1:N_sim) {
 
 close(progressbar)
 
-model_data <- "PGWABST"
-prop <- 75
 save.image(file = paste("SIMULATION/DATA/", model_data, "_n_", sample_size, "_prop_", prop, ".RData", sep = ""))

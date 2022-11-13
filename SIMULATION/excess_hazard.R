@@ -38,27 +38,47 @@ compute_re <- function (re, regions, ...) {
   r
 }
 
-simulate_RS_MEGH <- function (dist, pars, X_tilde, X, alpha, beta, re_tilde, re, ...) {
+simulate_RS_MEGH <- function (dist, pars, X_tilde, X, alphas, betas, dep, re_tilde, re, idxs, ...) {
   
-  u <- runif(n = nrow(X))
-  x_tilde_alpha <- X_tilde %*% alpha
-  p <- 1 - exp(log(u) * exp(x_tilde_alpha - (X %*% beta) + compute_re(re = re_tilde, regions = desMat$gor) - compute_re(re = re, regions = desMat$gor)))
-  
-  if (dist == "PGW") {
-    quant <- qPGW(p = p, eta = pars$eta, nu = pars$nu, theta = pars$theta)
-  } else if (dist == "LN") {
-    quant <- qLN(p = p, mu = pars$mu, sigma = pars$sigma)
-  } else if (dist == "LL") {
-    quant <- qLL(p = p, mu = pars$mu, sigma = pars$sigma)
-  } else if (dist == "GG") {
-    quant <- qGG(p = p, eta = pars$eta, nu = pars$nu, theta = pars$theta)
-  } else if (dist == "GAM") {
-    quant <- qGAM(p = p, eta = pars$eta, nu = pars$nu)
-  } else {
-    stop("Choose a valid distribution")
+  compute_quantile <- function (dist, p, pars, ...) {
+    if (dist == "PGW") {
+      quant <- qPGW(p = p, eta = pars$eta, nu = pars$nu, theta = pars$theta)
+    } else if (dist == "LN") {
+      quant <- qLN(p = p, mu = pars$mu, sigma = pars$sigma)
+    } else if (dist == "LL") {
+      quant <- qLL(p = p, mu = pars$mu, sigma = pars$sigma)
+    } else if (dist == "GG") {
+      quant <- qGG(p = p, eta = pars$eta, nu = pars$nu, theta = pars$theta)
+    } else if (dist == "GAM") {
+      quant <- qGAM(p = p, eta = pars$eta, nu = pars$nu)
+    } else {
+      stop("Choose a valid distribution")
+    }
+    quant
   }
   
-  den <- exp(x_tilde_alpha)
+  u <- runif(n = nrow(X))
+  x_tilde_alpha <- matrix(data = NA, nrow = nrow(X), ncol = 1)
+  x_beta  <- matrix(data = NA, nrow = nrow(X), ncol = 1)
+  for (i in 1:nrow(X)) {
+    alpha <- alphas[[dep[i]]] 
+    beta  <- betas[[dep[i]]]
+    x_tilde_alpha[i, ] <- X_tilde[i, ] %*% alpha
+    x_beta[i, ] <- X[i, ] %*% beta
+  }
+  p <- 1 - exp(log(1 - u) / exp(((x_beta) + compute_re(re = re, regions = desMat$gor)) - (x_tilde_alpha + compute_re(re = re_tilde, regions = desMat$gor))))
+  
+  quant <- list()
+  for (i in 1:length(idxs)) { quant[[i]] <- compute_quantile(dist = dist, p = as.matrix(p[idxs[[i]], ]), pars = pars) }
+  
+  tmp <- matrix(data = 0, nrow = nrow(p), ncol = 1)
+  for (j in 1:nrow(p)) {
+    l <- which(sapply(idxs, function (e) is.element(j, e)))
+    tmp[j, 1] <- quant[[l]][which(idxs[[l]] == j)]
+  }
+  quant <- tmp
+  
+  den <- exp(x_tilde_alpha + compute_re(re = re_tilde, regions = desMat$gor))
   
   (quant / den)
 }

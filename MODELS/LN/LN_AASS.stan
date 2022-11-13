@@ -71,7 +71,7 @@ model {
   target += icar_normal_lpdf(u | tau_u, N_reg, node1, node2);
   
   // Hyperpriors
-  target += gamma_lpdf(tau_u | 1, 1);
+  target += gamma_lpdf(tau_u | 0.1, 0.1);
 
 }
 
