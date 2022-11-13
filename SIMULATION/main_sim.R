@@ -1,12 +1,12 @@
 source("header.R")
 library(zoo)
 
-model_data <- "LN_ABCD"
-sample_size <- 2000
+model_data <- "LN_ABST"
+sample_size <- 500
 prop <- 50
 load(paste("SIMULATION/DATA/", model_data, "_n_", sample_size, "_prop_", prop, ".RData", sep = ""))
 
-N_sim <- 1
+N_sim <- 50
 
 ##################################################
 
@@ -39,12 +39,16 @@ dist <- gsub(pattern = "_", replacement = "", x = substring(text = model, first 
 m <- compile_model(model = model)
 
 r <- list()
+bridge <- list()
 for (k in 1:N_sim) {
   print(paste(sprintf('%03d', k), " out of ", N_sim, sep = ""))
   d <- data_stan(data = data[[k]], model = model, cov.tilde = c("age"), cov = c("age", "sex", "dep"), nonlinear = c(), adj_info = adj_info)
   r[[k]] <- fit_stan(mod = m, data = d, chains = 4, iter = 2e3, warmup = 1e3, max_treedepth = 10)
+  bridge[[k]] <- bridge_sampler(samples = r[[k]]$fit, cores = getOption(x = "mc.cores", default = detectCores()), silent = T)
   print(r[[k]]$fit, pars = c("log_lik"), include = F)
 }
 
 saveRDS(object = r, file = paste("SIMULATION/FITTED_MODELS/data_", model_data, "_fit_", model, "_n_", sample_size, "_prop_", prop, "_fit_result.rds", sep = ""))
+saveRDS(object = bridge, file = paste("FITTED_MODELS/", dist, "/bridge_", model, ".rds", sep = ""))
+
 # r <- readRDS(file = paste("SIMULATION/FITTED_MODELS/data_", model_data, "_fit_", model, "_n_", sample_size, "_prop_", prop, "_fit_result.rds", sep = ""))
