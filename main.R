@@ -17,11 +17,6 @@ d <- data_stan(data = data, model = model, cov.tilde = c("age"), cov = c("age", 
 m <- compile_model(model = model)
 r <- fit_stan(mod = m, data = d)
 
-print(r$fit, pars = c("log_lik", "u_tilde", "u", "v_tilde", "v"), include = F)
-# pairs(x = r$fit, pars = c("log_lik", "energy__", "lp__", "v", "v_tilde", "u", "u_tilde"), include = F)
-# traceplot(object = r$fit, pars = c("log_lik", "energy__", "lp__", "v", "v_tilde", "u", "u_tilde"), include = F)
-
-r$time_taken
 saveRDS(object = r, file = paste("FITTED_MODELS/", dist, "/", model, ".rds", sep = ""))
 
 # Bayes Factor
