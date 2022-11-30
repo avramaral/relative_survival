@@ -15,7 +15,7 @@ dist <- gsub(pattern = "_", replacement = "", x = substring(text = model, first 
 
 d <- data_stan(data = data, model = model, cov.tilde = c("age"), cov = c("age", "wbc", "sex", "dep"), nonlinear = c(), adj_info = adj_info)
 m <- compile_model(model = model)
-r <- fit_stan(mod = m, data = d)
+r <- fit_stan(mod = m, data = d, chains = 2, iter = 2e3, warmup = 1e3)
 
 saveRDS(object = r, file = paste("FITTED_MODELS/", dist, "/", model, ".rds", sep = ""))
 

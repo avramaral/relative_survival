@@ -1,13 +1,18 @@
 # "main.R" functions
 
-adj_list <- function(map, sf = FALSE, ...) {
+adj_list <- function(map = NULL, W = NULL, sf = FALSE, ...) {
   
   if (!class(map) == "SpatialPolygons") {
-    stop("'map' is not a 'SpatialPolygons' object.")
+    if (is.matrix(W)) {
+      adj <- W  
+    } else {
+     stop("'W' must be a neighbor matrix.") 
+    }
+  } else {
+    adj <- poly2nb(pl = map)
+    adj <- nb2mat(neighbours = adj, style = "B") 
   }
   
-  adj <- poly2nb(pl = map)
-  adj <- nb2mat(neighbours = adj, style = "B")
   N_reg <- nrow(adj)
   rownames(adj) <- 1:N_reg
   colnames(adj) <- 1:N_reg

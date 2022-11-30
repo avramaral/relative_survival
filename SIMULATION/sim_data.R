@@ -1,9 +1,15 @@
-library(SimLT)
-library(msm)
-library(lubridate)
-library(igraph)
-library(rstan)
-library(parallel)
+args <- commandArgs(trailingOnly = TRUE)
+model_data  <- args[1]
+prop        <- args[2]
+sample_size <- args[3]
+sample_size <- as.numeric(sample_size)
+
+library("SimLT")
+library("msm")
+library("lubridate")
+library("igraph")
+library("rstan")
+library("parallel")
 
 source("models.R")
 source("utils.R")
@@ -17,16 +23,18 @@ LT <- as.data.frame(read.table("DATA/ENGLAND_LT_2010_2015.txt", header = T))
 
 ##################################################
 
-model_data <- "PGWABST"
-prop <- 50
+# model_data <- "LN_ABST" #####
+# prop <- 75              #####
 dist <- gsub(pattern = "_", replacement = "", x = substring(text = model_data, first = c(1, 4), last = c(3, 7))[1])
 
-sample_size <- 2000
+# sample_size <- 500     #####
 year_init <- 2010
 year_last <- 2014
 
 precision_tilde <- 10
-precision <- 10
+precision <- 10       
+
+manual_effects <- FALSE   #####
 
 last_day <- ymd(paste(year_last, "-12-31", sep = ""))
 sample_size <- ifelse(test = (sample_size %% 2 == 0), yes = sample_size, no = sample_size + 1)
@@ -37,7 +45,7 @@ fixed_times <- c(seq(from = ymd(paste(year_init, "-01-01", sep = "")), to = ymd(
 hrates_fem <- compute_hazard_rates(X = X_mal, fixed_times = fixed_times, sex = 1)
 hrates_mal <- compute_hazard_rates(X = X_fem, fixed_times = fixed_times, sex = 2) 
 
-N_sim <- 50
+# N_sim <- 200              ##### 
 data <- list()
 
 progressbar <- txtProgressBar(min = 1, max = N_sim, initial = 1)
@@ -65,9 +73,34 @@ for (k in 1:N_sim) {
     s_re <- simulate_re(struc = "NONE")
   }
   
-  re_tilde <- s_re$re_tilde
-  re <- s_re$re
-    
+  if (!manual_effects) {
+    re_tilde <- s_re$re_tilde
+    re <- s_re$re
+  } else {
+    re_tilde <- rep(0, 9)
+    re_tilde[1] <-  4.0
+    re_tilde[2] <-  3.0
+    re_tilde[3] <-  2.0
+    re_tilde[4] <-  1.5
+    re_tilde[5] <-  0.0
+    re_tilde[6] <- -1.5
+    re_tilde[7] <- -2.0
+    re_tilde[8] <- -3.0
+    re_tilde[9] <- -4.0
+    re_tilde <- scale(re_tilde, scale = F)
+    re <- rep(0, 9)
+    re[1] <-  4.0
+    re[2] <-  3.0
+    re[3] <-  2.0
+    re[4] <-  1.5
+    re[5] <-  0.0
+    re[6] <- -1.5
+    re[7] <- -2.0
+    re[8] <- -3.0
+    re[9] <- -4.0
+    re <- scale(re, scale = F)
+  }
+  
   # Design Matrix
   desMat <- rbind(X_fem, X_mal)
   desMat <- cbind(desMat, sex = c(rep(x = 0, times = nrow(X_fem)), rep(x = 1, times = nrow(X_mal))))
@@ -88,11 +121,12 @@ for (k in 1:N_sim) {
   
   for (i in 1:length(unique(dep))) {
     if (prop == 50) {
-      alphas[[i]] <- c(2)
-      betas[[i]] <-  c(2, - 1, - 2)
+      alphas[[i]] <- c(1)
+      betas[[i]] <-  c(1, 1, - 2)
     } else if (prop == 75) {
-      alphas[[i]] <- c(2)
-      betas[[i]] <-  c(2, - 1, - 2)
+      alphas[[i]] <- c(1)
+      betas[[i]] <-  c(1, 1, - 2)
+      
     } else {
       stop("Choose a valid ratio for 'observed / total individuals.'")
     }
@@ -100,19 +134,32 @@ for (k in 1:N_sim) {
   
   if (dist == "LN") {
     if (prop == 50) {
-      pars <- list(mu = 1, sigma = 1)
+      # pars <- list(mu = 1, sigma = 0.5)
+      pars <- list(mu = 0.65, sigma = 1.15)
     } else if (prop == 75) {
-      pars <- list(mu = 0, sigma = 0.1)
+      # pars <- list(mu = 1, sigma = 0.5)
+      pars <- list(mu = 0.65, sigma = 1.15)
     }
   } else if (dist == "PGW") {
     if (prop == 50) {
-      pars <- list(eta = 1.5, nu = 0.75, theta = 1.5) 
+      # pars <- list(eta = 2, nu = 8, theta = 3)
+      pars <- list(eta = 0.5, nu = 3.75, theta = 8) 
     } else if (prop == 75) {
-      pars <- list(eta = 1, nu = 2, theta = 1) 
+      # pars <- list(eta = 2, nu = 8, theta = 3)
+      pars <- list(eta = 0.5, nu = 3.75, theta = 8) 
     }
   }
   
-  C_1 <- rep(x = 5, times = nrow(desMat))
+  if (prop == 50) {
+    if (dist == "LN") {
+      C_1 <- rep(x = 1, times = nrow(desMat))
+    } else if (dist == "PGW") {
+      C_1 <- rep(x = 1, times = nrow(desMat))
+    }
+    
+  } else if (prop == 75) {
+    C_1 <- rep(x = 5, times = nrow(desMat))
+  }
   C_2 <- rexp(n = nrow(desMat), rate = 0.01)
   sim_exc <- list()
   sim_exc$sim.exc <- c()
@@ -120,7 +167,7 @@ for (k in 1:N_sim) {
   tim_exc <- simulate_RS_MEGH(dist = dist, pars = pars, X_tilde = X_tilde, X = X, alphas = alphas, betas = betas, dep = dep, re_tilde = re_tilde, re = re, idxs = idxs)
   for (i in 1:nrow(desMat)) { sim_exc$sim.exc <- c(sim_exc$sim.exc, min(tim_exc[i], C_1[i], C_2[i])) }
   for (i in 1:nrow(desMat)) { sim_exc$status <- c(sim_exc$status, ifelse(test = ((tim_exc[i] < C_1[i]) & (tim_exc[i] < C_2[i])), yes = 1, no = 0)) }
-    
+  
   hist(sim_exc$sim.exc)
   mean(sim_exc$status)
   
@@ -147,8 +194,8 @@ for (k in 1:N_sim) {
   }
   times <- ifelse(test = (times < (1 / 365)), yes = (1 / 365), no = times) # Making survival at least one day
   
-  # hist(times, breaks = 10)
-  # mean(status)
+  hist(times, breaks = 10)
+  mean(status)
   
   ##################################################
   
@@ -162,9 +209,13 @@ for (k in 1:N_sim) {
   
   data[[k]] <- data.frame(time = times, obs = status, region = desMat$gor, age = desMat$age, sex = desMat$sex, dep = desMat$dep, pop.haz = pop_haz)
   
-  setTxtProgressBar(progressbar, k) 
+  setTxtProgressBar(progressbar, k)
 }
 
 close(progressbar)
 
-save.image(file = paste("SIMULATION/DATA/", model_data, "_n_", sample_size, "_prop_", prop, ".RData", sep = ""))
+if (!manual_effects) {
+  save.image(file = paste("SIMULATION/DATA/", model_data, "_n_", sample_size, "_prop_", prop, ".RData", sep = ""))
+} else {
+  save.image(file = paste("SIMULATION/DATA/SPECIAL/", model_data, "_n_", sample_size, "_prop_", prop, ".RData", sep = ""))
+}

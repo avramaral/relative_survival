@@ -83,7 +83,7 @@ simulate_RS_MEGH <- function (dist, pars, X_tilde, X, alphas, betas, dep, re_til
   (quant / den)
 }
 
-simulate_re <- function (struc = "ICAR", precision_tilde = 1, precision = 1, England = T, N_regions = 10, ...) {
+simulate_re <- function (struc = "ICAR", precision_tilde = 1, precision = 1, England = T, N_regions = 9, ...) {
   if (England) {
     W <- rbind(c(0, 1, 1, 0, 0, 0, 0, 0, 0),
                c(1, 0, 1, 1, 1, 0, 0, 0, 0),
@@ -93,7 +93,8 @@ simulate_re <- function (struc = "ICAR", precision_tilde = 1, precision = 1, Eng
                c(0, 0, 0, 1, 0, 0, 1, 1, 0),
                c(0, 0, 0, 0, 0, 1, 0, 1, 0),
                c(0, 0, 0, 1, 1, 1, 1, 0, 1),
-               c(0, 0, 0, 0, 1, 0, 0, 1, 0)) 
+               c(0, 0, 0, 0, 1, 0, 0, 1, 0))
+    N_regions <- nrow(W)
   } else {
     W <- rneigh_matrix(N_regions = N_regions)
   }
@@ -102,11 +103,11 @@ simulate_re <- function (struc = "ICAR", precision_tilde = 1, precision = 1, Eng
     re_tilde <- rICAR(Q = precision_tilde * (D - W))
     re <- rICAR(Q = precision * (D - W))  
   } else if (struc == "IID") {
-    re_tilde <- as.matrix(rIID(sigma = sqrt(1 / precision), N_regions = nrow(W)))
-    re <- as.matrix(rIID(sigma = sqrt(1 / precision), N_regions = nrow(W)))
+    re_tilde <- as.matrix(rIID(sigma = sqrt(1 / precision), N_regions = N_regions))
+    re <- as.matrix(rIID(sigma = sqrt(1 / precision), N_regions = N_regions))
   } else if (struc == "NONE") {
-    re_tilde <- as.matrix(rep(x = 0, times = nrow(W)))
-    re <- as.matrix(rep(x = 0, times = nrow(W)))
+    re_tilde <- as.matrix(rep(x = 0, times = N_regions))
+    re <- as.matrix(rep(x = 0, times = N_regions))
   }
   list(re_tilde = re_tilde, re = re)
 }
