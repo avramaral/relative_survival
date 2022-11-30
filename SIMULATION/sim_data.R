@@ -27,7 +27,7 @@ LT <- as.data.frame(read.table("DATA/ENGLAND_LT_2010_2015.txt", header = T))
 # prop <- 75              #####
 dist <- gsub(pattern = "_", replacement = "", x = substring(text = model_data, first = c(1, 4), last = c(3, 7))[1])
 
-# sample_size <- 500     #####
+# sample_size <- 5000     #####
 year_init <- 2010
 year_last <- 2014
 
@@ -45,7 +45,7 @@ fixed_times <- c(seq(from = ymd(paste(year_init, "-01-01", sep = "")), to = ymd(
 hrates_fem <- compute_hazard_rates(X = X_mal, fixed_times = fixed_times, sex = 1)
 hrates_mal <- compute_hazard_rates(X = X_fem, fixed_times = fixed_times, sex = 2) 
 
-# N_sim <- 200              ##### 
+N_sim <- 200              #####
 data <- list()
 
 progressbar <- txtProgressBar(min = 1, max = N_sim, initial = 1)
@@ -104,12 +104,19 @@ for (k in 1:N_sim) {
   # Design Matrix
   desMat <- rbind(X_fem, X_mal)
   desMat <- cbind(desMat, sex = c(rep(x = 0, times = nrow(X_fem)), rep(x = 1, times = nrow(X_mal))))
-  desMat$dep <- scale(desMat$dep)
-  desMat$age <- scale(desMat$age)
-  dep <- c(X_fem$dep, X_mal$dep)
   
+  #####
+  dep <- desMat$dep
+  mat <- matrix(data = 0, nrow = length(dep), ncol = length(unique(dep)))
+  for (i in 1:length(dep)) { mat[i, dep[i]] <- 1 }
+  colnames(mat) <- paste("dep_", 1:length(unique(dep)), sep = "")
+  desMat <- cbind(desMat, mat)
+  #####
+  
+  desMat$age <- scale(desMat$age)
+
   X_tilde <- matrix(data = desMat$age, ncol = 1, byrow = F) 
-  X <- matrix(data = c(desMat$age, desMat$sex, desMat$dep), ncol = 3, byrow = F) 
+  X <- matrix(data = c(desMat$age, desMat$sex, desMat$dep_2, desMat$dep_3, desMat$dep_4, desMat$dep_5), ncol = 6, byrow = F) 
   
   idxs <- list()
   for (i in 1:length(unique(desMat$gor))) {
@@ -122,10 +129,10 @@ for (k in 1:N_sim) {
   for (i in 1:length(unique(dep))) {
     if (prop == 50) {
       alphas[[i]] <- c(1)
-      betas[[i]] <-  c(1, 1, - 2)
+      betas[[i]] <-  c(1, 2, -1, -1, -1, -1)
     } else if (prop == 75) {
       alphas[[i]] <- c(1)
-      betas[[i]] <-  c(1, 1, - 2)
+      betas[[i]] <-  c(1, 2, -1, -1, -1, -1)
       
     } else {
       stop("Choose a valid ratio for 'observed / total individuals.'")
@@ -134,18 +141,14 @@ for (k in 1:N_sim) {
   
   if (dist == "LN") {
     if (prop == 50) {
-      # pars <- list(mu = 1, sigma = 0.5)
       pars <- list(mu = 0.65, sigma = 1.15)
     } else if (prop == 75) {
-      # pars <- list(mu = 1, sigma = 0.5)
       pars <- list(mu = 0.65, sigma = 1.15)
     }
   } else if (dist == "PGW") {
     if (prop == 50) {
-      # pars <- list(eta = 2, nu = 8, theta = 3)
       pars <- list(eta = 0.5, nu = 3.75, theta = 8) 
     } else if (prop == 75) {
-      # pars <- list(eta = 2, nu = 8, theta = 3)
       pars <- list(eta = 0.5, nu = 3.75, theta = 8) 
     }
   }
@@ -207,7 +210,7 @@ for (k in 1:N_sim) {
   pop_haz <- pop_haz[order(pop_haz$index), ]
   pop_haz <- pop_haz$rate
   
-  data[[k]] <- data.frame(time = times, obs = status, region = desMat$gor, age = desMat$age, sex = desMat$sex, dep = desMat$dep, pop.haz = pop_haz)
+  data[[k]] <- data.frame(time = times, obs = status, region = desMat$gor, age = desMat$age, sex = desMat$sex, dep_2 = desMat$dep_2, dep_3 = desMat$dep_3, dep_4 = desMat$dep_4, dep_5 = desMat$dep_5, pop.haz = pop_haz)
   
   setTxtProgressBar(progressbar, k)
 }

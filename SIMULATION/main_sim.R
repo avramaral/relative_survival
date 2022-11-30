@@ -9,11 +9,11 @@ library("methods")
 source("header.R")
 library("zoo")
 
-manual_effects <- FALSE    #####
+manual_effects <- FALSE       #####
 
-# model_data  <- "LN_ABST" #####
-# sample_size <- 5000      #####
-# prop        <- 75        #####
+# model_data <- "LN_ABST"     #####
+# sample_size <- 500          #####
+# prop <- 75                  #####
 
 if (!manual_effects) {
   load(paste("SIMULATION/DATA/", model_data, "_n_", sample_size, "_prop_", prop, ".RData", sep = ""))
@@ -27,7 +27,7 @@ min_N_valid_fit_N_sim <- min(N_valid_fit, N_sim)
 
 ##################################################
 
-adj_list_simplified <- function(W, ...) {
+adj_list_simplified <- function(W, sf = T,...) {
   adj <- W
   N_reg <- nrow(adj)
   
@@ -35,7 +35,17 @@ adj_list_simplified <- function(W, ...) {
   node1 <- nodes$node1
   node2 <- nodes$node2
   
-  list(N_reg = N_reg, N_edges = length(node1), node1 = node1, node2 = node2)
+  if (sf) {
+    adj.sparse <- sparseMatrix(i = node1, j = node2, x = 1, symmetric = TRUE)
+    Q <- Diagonal(n = N_reg, x = rowSums(adj.sparse)) - adj.sparse
+    Q_pert <- Q + Diagonal(n = N_reg) * max(diag(Q)) * sqrt(.Machine$double.eps)
+    Q_inv <- inla.qinv(Q = Q_pert, constr = list(A = matrix(data = 1, nrow = 1, ncol = N_reg), e = 0))
+    scaling_factor <- exp(mean(log(diag(Q_inv))))
+    adj_info <- list(N_reg = N_reg, N_edges = length(node1), node1 = node1, node2 = node2, scaling_factor = scaling_factor)
+  } else {
+    adj_info <- list(N_reg = N_reg, N_edges = length(node1), node1 = node1, node2 = node2)
+  }
+  adj_info
 }
 
 W <- rbind(c(0, 1, 1, 0, 0, 0, 0, 0, 0),
@@ -51,7 +61,7 @@ W <- rbind(c(0, 1, 1, 0, 0, 0, 0, 0, 0),
 adj_info <- adj_list_simplified(W)
 
 # model <- "LN_ABCD" #####
-dist    <- gsub(pattern = "_", replacement = "", x = substring(text = model, first = c(1, 4), last = c(3, 7))[1])
+dist <- gsub(pattern = "_", replacement = "", x = substring(text = model, first = c(1, 4), last = c(3, 7))[1])
 
 if (dist %in% c("LN", "LL")) {
   analyzed_pars <- c("mu", "sigma", "alpha", "beta")
@@ -72,7 +82,7 @@ for (k in 1:N_sim) {
   print(paste("Current valid fitted models: ", count, sep = ""))
   if (count < min_N_valid_fit_N_sim) {
     print(paste(sprintf('%03d', k), " out of ", N_sim, sep = ""))
-    d <- data_stan(data = data[[k]], model = model, cov.tilde = c("age"), cov = c("age", "sex", "dep"), nonlinear = c(), adj_info = adj_info)
+    d <- data_stan(data = data[[k]], model = model, cov.tilde = c("age"), cov = c("age", "dep_2", "dep_3", "dep_4", "dep_5", "sex"), nonlinear = c(), adj_info = adj_info)
     r_temp <- fit_stan(mod = m, data = d, chains = 4, iter = 4e3, warmup = 2e3, max_treedepth = 12, adapt_delta = 0.8)
     
     if (as.logical(sum(summary(r_temp$fit, pars = analyzed_pars)$summary[, "Rhat"] > 1.5))) {
