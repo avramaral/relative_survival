@@ -55,6 +55,17 @@ compute_loo <- function (fit, ...) {
   loo
 }
 
+make_dummy <- function (var, name = tail(str_split(string = deparse(substitute(var)), pattern = "\\$")[[1]], 1), ...) {
+  n_categories <- length(unique(var))
+  m <- matrix(0, nrow = length(var), ncol = n_categories)
+  
+  for(i in 1:length(var)) {
+    m[i, var[i]] <- 1
+  }
+  colnames(m) <- paste(rep(x = name, times = n_categories), "_", 1:n_categories, sep = "")
+  m
+}
+
 # "data_stan.R" functions
 
 validate_model <- function (model, ...) {
@@ -139,6 +150,42 @@ add_re <- function (fitted_data, model, lp, lp_tilde, i, j, ...) {
   
   list(lp_re_tilde = lp_re_tilde, lp_re = lp_re)
 }
+
+add_re_mod <- function (fitted_data, model, lp, lp_tilde, i, j, ...) {
+  
+  re_per_ind <- function (re, region, ...) {
+    res <- c()
+    for (i in 1:length(region)) {
+      aux <- re[region[i]]
+      res <- c(res, aux)
+    }
+    res
+  }
+  
+  if (model %in% c("ABCD", "ABXD", "ABCC", "ABDD", "XBXD", "AACC", "AADD", "BBCC", "BBDD")) {
+    re_tilde <- re_per_ind(re = fitted_data$v_tilde[i, ], region = j)
+    re       <- re_per_ind(re = fitted_data$v[i, ], region = j)
+  } else if (model %in% c("ABST", "ABXT", "ABSS", "ABTT", "XBXT", "AASS", "AATT", "BBSS", "BBTT")) {
+    re_tilde <- re_per_ind(re = fitted_data$u_tilde[i, ], region = j)
+    re       <- re_per_ind(re = fitted_data$u[i, ], region = j)
+  } else if (model %in% c("ABYZ", "ABXZ", "ABYY", "ABZZ", "XBXZ", "AAYY", "AAZZ", "BBYY", "BBZZ")) {
+    re_tilde <- re_per_ind(re = fitted_data$convolved_re_tilde[i, ], region = j)
+    re       <- re_per_ind(re = fitted_data$convolved_re[i, ], region = j)
+  } else {
+    re_tilde <- 0
+    re       <- 0
+  }
+  
+  if (model %in% c("ABCC", "ABDD", "AACC", "AADD", "BBCC", "BBDD", "ABSS", "ABTT", "AASS", "AATT", "BBSS", "BBTT", "ABYY", "ABZZ", "AAYY", "AAZZ", "BBYY", "BBZZ")) {
+    lp_re_tilde <- lp_tilde + re
+    lp_re       <- lp + re
+  } else {
+    lp_re_tilde <- lp_tilde + re_tilde
+    lp_re       <- lp + re
+  }
+  
+  list(lp_re_tilde = lp_re_tilde, lp_re = lp_re)
+} 
 
 # Visualization
 

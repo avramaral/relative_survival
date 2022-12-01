@@ -6,6 +6,7 @@ library("bridgesampling")
 library("splines")
 library("stringr")
 library("INLA")
+library("stringr")
 
 # Optional
 library("ggplot2")

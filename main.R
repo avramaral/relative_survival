@@ -6,6 +6,7 @@ data <- readRDS(file = "DATA/leuk.rds")
 data$age <- scale(data$age)
 data$wbc <- scale(data$wbc)
 data$dep <- scale(data$dep)
+# data <- cbind(data, make_dummy(var = data$var)[, -1])
 
 map <- readRDS(file = "DATA/nwengland_map.rds")
 adj_info <- adj_list(map = map, sf = T)
@@ -17,7 +18,8 @@ d <- data_stan(data = data, model = model, cov.tilde = c("age"), cov = c("age", 
 m <- compile_model(model = model)
 r <- fit_stan(mod = m, data = d)
 
-saveRDS(object = r, file = paste("FITTED_MODELS/", dist, "/", model, ".rds", sep = ""))
+saveRDS(object = d, file = paste("FITTED_MODELS/", dist, "/d_", model, ".rds", sep = ""))
+saveRDS(object = r, file = paste("FITTED_MODELS/", dist, "/",   model, ".rds", sep = ""))
 
 # Bayes Factor
 bridge <- bridge_sampler(samples = r$fit, cores = getOption(x = "mc.cores", default = detectCores()), silent = T)
