@@ -30,5 +30,5 @@ r <- fit_stan(mod = m, data = d) # fit the model
 
 #### References
 
-> Henderson, R., Shimakura, S. and Gorst, D. (2002). *Modeling spatial variation in leukemia survival data*. Journal of the American Statistical Association 97, 965–972.
+> Henderson, R, Shimakura, S and Gorst, D (2002). *Modeling spatial variation in leukemia survival data*. Journal of the American Statistical Association 97, 965–972.
 
