@@ -1,6 +1,6 @@
 ## Extended Excess Hazard Models for Spatially Dependent Survival Data
 
-> **Amaral, AVR**, Rubio, FJ, Quaresma, M, Rodríguez-Cortés, FJ, and Moraga, P (2023). *Extended Excess Hazard Models for Spatially Dependent Survival Data*. Submitted. arxiv preprint [arXiv:2302.09392](https://arxiv.org/abs/2302.09392).
+> **Amaral, AVR**, Rubio, FJ, Quaresma, M, Rodríguez-Cortés, FJ, and Moraga, P (2023). *Extended Excess Hazard Models for Spatially Dependent Survival Data*. Submitted. arXiv preprint. [arXiv:2302.09392](https://arxiv.org/abs/2302.09392).
 
 
 ### How to fit the `RS-SGH` model
