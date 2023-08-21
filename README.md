@@ -5,7 +5,7 @@
 
 ### How to fit the `RS-SGH` model
 
-As an example, we will fit the RS-SGH model for leukemia-diagnosed patients (Henderson et al., 2002).
+As an example, we can fit the RS-SGH model for leukemia-diagnosed patients (Henderson et al., 2002) as follows
 
 ``` r
 source("header.R") # load libraries and needed functions
